@@ -15,8 +15,8 @@ export default function CalendarDay({ day, isWorked, events, onToggle }: Calenda
   // Weekend cells
   if (!day.isBusinessDay) {
     return (
-      <div className="min-h-24 p-1 border-t border-gray-100 bg-gray-50/50">
-        <div className="flex justify-center">
+      <div className="min-h-24 p-1 border-t border-gray-100 bg-gray-50/50 flex flex-col">
+        <div className="text-center">
           <span className="text-xs text-gray-400">{dayNumber}</span>
         </div>
         <EventList events={events} />
@@ -27,8 +27,8 @@ export default function CalendarDay({ day, isWorked, events, onToggle }: Calenda
   // Not toggleable (end-of-month overflow from next month)
   if (!day.isToggleable) {
     return (
-      <div className="min-h-24 p-1 border-t border-gray-100 bg-gray-50/30">
-        <div className="flex justify-center">
+      <div className="min-h-24 p-1 border-t border-gray-100 bg-gray-50/30 flex flex-col">
+        <div className="text-center">
           <span className="text-xs text-gray-300">{dayNumber}</span>
         </div>
         <EventList events={events} />
@@ -49,10 +49,10 @@ export default function CalendarDay({ day, isWorked, events, onToggle }: Calenda
 
   return (
     <button
-      className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors ${bgClass}`}
+      className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col ${bgClass}`}
       onClick={() => onToggle(day.dateKey)}
     >
-      <div className="flex justify-center items-center gap-1">
+      <div className="text-center w-full flex justify-center items-center gap-1">
         <span className={`text-xs font-medium ${textClass}`}>
           {dayNumber}
         </span>
