@@ -1,45 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { format, startOfMonth, endOfMonth, addDays } from "date-fns";
+import { format, subYears, addYears } from "date-fns";
+import { GoogleCalendarEvent } from "@/lib/types";
 
 type SyncStatus = "idle" | "loading" | "synced" | "error";
 
 interface GoogleSyncButtonProps {
-  displayedMonth: Date;
-  onSync: (dates: string[]) => void;
+  onSync: (events: GoogleCalendarEvent[]) => void;
   onClear: () => void;
-  syncedCount: number;
+  isSynced: boolean;
 }
 
 export default function GoogleSyncButton({
-  displayedMonth,
   onSync,
   onClear,
-  syncedCount,
+  isSynced,
 }: GoogleSyncButtonProps) {
   const { data: session, status: sessionStatus } = useSession();
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const hasAutoSynced = useRef(false);
 
-  const handleSync = async () => {
-    if (sessionStatus === "unauthenticated" || !session) {
-      signIn("google");
-      return;
+  // Auto-sync on mount when authenticated
+  useEffect(() => {
+    if (sessionStatus === "authenticated" && session && !hasAutoSynced.current && !isSynced) {
+      // If token refresh failed, force re-login
+      if (session.error === "RefreshAccessTokenError") {
+        signIn("google");
+        return;
+      }
+      hasAutoSynced.current = true;
+      handleSyncInternal();
     }
+  }, [sessionStatus, session, isSynced]);
+
+  const handleSyncInternal = async () => {
 
     setSyncStatus("loading");
     setError(null);
 
     try {
-      const monthStart = startOfMonth(displayedMonth);
-      const monthEnd = endOfMonth(displayedMonth);
-      // Add a day to monthEnd to include the full last day
-      const timeMax = addDays(monthEnd, 1);
+      const now = new Date();
+      const timeMin = subYears(now, 1);
+      const timeMax = addYears(now, 1);
 
       const params = new URLSearchParams({
-        timeMin: format(monthStart, "yyyy-MM-dd"),
+        timeMin: format(timeMin, "yyyy-MM-dd"),
         timeMax: format(timeMax, "yyyy-MM-dd"),
       });
 
@@ -47,7 +55,6 @@ export default function GoogleSyncButton({
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Session expired, re-authenticate
           signIn("google");
           return;
         }
@@ -55,7 +62,7 @@ export default function GoogleSyncButton({
       }
 
       const data = await response.json();
-      onSync(data.daysOff);
+      onSync(data.events);
       setSyncStatus("synced");
     } catch (err) {
       console.error("Sync error:", err);
@@ -64,29 +71,35 @@ export default function GoogleSyncButton({
     }
   };
 
+  const handleSync = () => {
+    if (sessionStatus === "unauthenticated" || !session || session.error) {
+      signIn("google");
+      return;
+    }
+    handleSyncInternal();
+  };
+
   const handleClear = () => {
     onClear();
     setSyncStatus("idle");
     setError(null);
+    hasAutoSynced.current = false;
   };
 
   const isLoading = syncStatus === "loading" || sessionStatus === "loading";
 
   return (
     <div className="flex items-center gap-2">
-      {syncStatus === "synced" && syncedCount > 0 ? (
-        <>
-          <span className="text-sm text-green-600">
-            {syncedCount} jour{syncedCount > 1 ? "s" : ""} importé
-            {syncedCount > 1 ? "s" : ""}
-          </span>
-          <button
-            onClick={handleClear}
-            className="text-sm text-gray-500 hover:text-gray-700 underline"
-          >
-            Effacer
-          </button>
-        </>
+      {syncStatus === "synced" || isSynced ? (
+        <button
+          onClick={handleClear}
+          className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          <svg className="w-4 h-4 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          Synchronisé
+        </button>
       ) : (
         <button
           onClick={handleSync}
