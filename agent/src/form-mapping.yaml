@@ -1,0 +1,38 @@
+# Pajemploi Form Field Mapping
+#
+# Instructions:
+# 1. Open pajemploi.urssaf.fr in your browser
+# 2. Right-click on each form field and select "Inspect"
+# 3. Find the field's id, name, or a unique selector
+# 4. Replace the "TODO" values below with the actual selectors
+#
+# Selector formats:
+# - "#fieldId" for id attribute
+# - "[name='fieldName']" for name attribute
+# - "input[placeholder='...']" for placeholder text
+# - ".className" for class (if unique)
+
+pajemploi:
+  # Login page selectors
+  login:
+    url: "https://www.pajemploi.urssaf.fr/"
+    email_field: "TODO"           # e.g., "#email" or "[name='email']"
+    password_field: "TODO"        # e.g., "#password"
+    submit_button: "TODO"         # e.g., "button[type='submit']"
+
+  # Declaration form selectors
+  # Navigate to the declaration page after login
+  declaration:
+    url: "TODO"                   # URL of the declaration form page
+
+    # Form fields - replace with actual selectors
+    monthlySalary: "TODO"         # Salaire mensuel
+    majoredHoursCount: "TODO"     # Nombre d'heures majorées
+    majoredHoursAmount: "TODO"    # Montant des heures majorées
+    totalSalary: "TODO"           # Salaire total (may be auto-calculated)
+    workedDays: "TODO"            # Nombre de jours travaillés
+    maintenanceAllowance: "TODO"  # Indemnité d'entretien
+    mealAllowance: "TODO"         # Indemnité de repas
+
+    # Child selection (if needed)
+    childSelector: "TODO"         # Dropdown or radio to select child
