@@ -27,3 +27,10 @@ export interface DeclarationResult {
   maintenanceAllowance: number;
   mealAllowance: number;
 }
+
+export interface GoogleCalendarEvent {
+  id: string;
+  summary: string;
+  start: string; // ISO date string
+  end: string; // ISO date string
+}

@@ -12,6 +12,9 @@ export function useCalendarState() {
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
   const [daysOff, setDaysOff] = useState<Set<string>>(() => new Set());
+  const [googleSyncedDays, setGoogleSyncedDays] = useState<Set<string>>(
+    () => new Set()
+  );
 
   const goToPreviousMonth = useCallback(() => {
     setDisplayedMonth((m) => subMonths(m, 1));
@@ -33,6 +36,28 @@ export function useCalendarState() {
     });
   }, []);
 
+  const syncFromGoogle = useCallback((dates: string[]) => {
+    setDaysOff((prev) => {
+      const next = new Set(prev);
+      for (const date of dates) {
+        next.add(date);
+      }
+      return next;
+    });
+    setGoogleSyncedDays(new Set(dates));
+  }, []);
+
+  const clearGoogleDays = useCallback(() => {
+    setDaysOff((prev) => {
+      const next = new Set(prev);
+      for (const date of googleSyncedDays) {
+        next.delete(date);
+      }
+      return next;
+    });
+    setGoogleSyncedDays(new Set());
+  }, [googleSyncedDays]);
+
   const grid: CalendarWeek[] = useMemo(
     () => buildCalendarGrid(displayedMonth),
     [displayedMonth]
@@ -46,10 +71,13 @@ export function useCalendarState() {
   return {
     displayedMonth,
     daysOff,
+    googleSyncedDays,
     grid,
     results,
     goToPreviousMonth,
     goToNextMonth,
     toggleDay,
+    syncFromGoogle,
+    clearGoogleDays,
   };
 }
