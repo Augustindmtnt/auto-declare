@@ -1,38 +1,40 @@
 # Pajemploi Form Field Mapping
 #
-# Instructions:
-# 1. Open pajemploi.urssaf.fr in your browser
-# 2. Right-click on each form field and select "Inspect"
-# 3. Find the field's id, name, or a unique selector
-# 4. Replace the "TODO" values below with the actual selectors
+# This file maps our data fields to the French labels visible on Pajemploi.
+# The agent uses Playwright's semantic locators (getByLabel, getByRole, getByText)
+# which are resilient to CSS/HTML changes.
 #
-# Selector formats:
-# - "#fieldId" for id attribute
-# - "[name='fieldName']" for name attribute
-# - "input[placeholder='...']" for placeholder text
-# - ".className" for class (if unique)
+# Instructions:
+# 1. Open pajemploi.urssaf.fr and navigate through the declaration flow
+# 2. Note the exact French labels next to each field
+# 3. Update the labels below to match exactly what you see on the site
 
 pajemploi:
-  # Login page selectors
+  urls:
+    home: "https://www.pajemploi.urssaf.fr/"
+    # Add declaration URL if it's a direct link, otherwise leave empty
+    # and the agent will navigate via the UI
+    declaration: ""
+
+  # Login form - labels as they appear on the page
   login:
-    url: "https://www.pajemploi.urssaf.fr/"
-    email_field: "TODO"           # e.g., "#email" or "[name='email']"
-    password_field: "TODO"        # e.g., "#password"
-    submit_button: "TODO"         # e.g., "button[type='submit']"
+    email_label: "Adresse email"
+    password_label: "Mot de passe"
+    submit_text: "Se connecter"
 
-  # Declaration form selectors
-  # Navigate to the declaration page after login
+  # Declaration form - French labels exactly as shown
   declaration:
-    url: "TODO"                   # URL of the declaration form page
+    # Salary fields
+    monthlySalary_label: "Salaire net"
+    majoredHoursCount_label: "Heures majorées"
+    majoredHoursAmount_label: "Montant heures majorées"
 
-    # Form fields - replace with actual selectors
-    monthlySalary: "TODO"         # Salaire mensuel
-    majoredHoursCount: "TODO"     # Nombre d'heures majorées
-    majoredHoursAmount: "TODO"    # Montant des heures majorées
-    totalSalary: "TODO"           # Salaire total (may be auto-calculated)
-    workedDays: "TODO"            # Nombre de jours travaillés
-    maintenanceAllowance: "TODO"  # Indemnité d'entretien
-    mealAllowance: "TODO"         # Indemnité de repas
+    # Days worked
+    workedDays_label: "Nombre de jours d'activité"
 
-    # Child selection (if needed)
-    childSelector: "TODO"         # Dropdown or radio to select child
+    # Allowances (indemnités)
+    maintenanceAllowance_label: "Indemnités d'entretien"
+    mealAllowance_label: "Indemnités de repas"
+
+    # Navigation/actions
+    submit_text: "Valider"  # We won't click this - just for reference

@@ -23,21 +23,21 @@ npx playwright install chromium
 
 ## Configuration
 
-Edit `src/form-mapping.yaml` with the actual field selectors from Pajemploi:
+Edit `src/form-mapping.yaml` with the French labels as they appear on Pajemploi:
 
 1. Open https://www.pajemploi.urssaf.fr/ in your browser
-2. Right-click on each form field and select "Inspect"
-3. Find the field's id, name, or a unique CSS selector
-4. Update the YAML file with the selectors
+2. Look at the text labels next to each form field
+3. Update the YAML file with the exact French text you see
+
+The agent uses Playwright's semantic locators (getByLabel, getByRole, getByText) which find fields by their visible labels rather than CSS selectors. This approach is resilient to website updates since labels rarely change.
 
 Example:
 ```yaml
 pajemploi:
   login:
-    url: "https://www.pajemploi.urssaf.fr/"
-    email_field: "#email"
-    password_field: "#password"
-    submit_button: "button[type='submit']"
+    email_label: "Adresse email"
+    password_label: "Mot de passe"
+    submit_text: "Se connecter"
 ```
 
 ## Usage
