@@ -1,20 +1,27 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { addMonths, subMonths } from "date-fns";
 import { buildCalendarGrid } from "@/lib/calendar-utils";
 import { computeDeclaration } from "@/lib/calculations";
 import { CHILDREN } from "@/lib/constants";
-import { CalendarWeek, DeclarationResult } from "@/lib/types";
+import { CalendarWeek, DeclarationResult, GoogleCalendarEvent } from "@/lib/types";
 
 export function useCalendarState() {
   const [displayedMonth, setDisplayedMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
-  const [daysOff, setDaysOff] = useState<Set<string>>(() => new Set());
-  const [googleSyncedDays, setGoogleSyncedDays] = useState<Set<string>>(
-    () => new Set()
-  );
+  const [daysOff, setDaysOff] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    const saved = localStorage.getItem("daysOff");
+    return saved ? new Set(JSON.parse(saved)) : new Set();
+  });
+  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+
+  // Persist daysOff to localStorage
+  useEffect(() => {
+    localStorage.setItem("daysOff", JSON.stringify([...daysOff]));
+  }, [daysOff]);
 
   const goToPreviousMonth = useCallback(() => {
     setDisplayedMonth((m) => subMonths(m, 1));
@@ -36,27 +43,13 @@ export function useCalendarState() {
     });
   }, []);
 
-  const syncFromGoogle = useCallback((dates: string[]) => {
-    setDaysOff((prev) => {
-      const next = new Set(prev);
-      for (const date of dates) {
-        next.add(date);
-      }
-      return next;
-    });
-    setGoogleSyncedDays(new Set(dates));
+  const syncFromGoogle = useCallback((events: GoogleCalendarEvent[]) => {
+    setGoogleEvents(events);
   }, []);
 
-  const clearGoogleDays = useCallback(() => {
-    setDaysOff((prev) => {
-      const next = new Set(prev);
-      for (const date of googleSyncedDays) {
-        next.delete(date);
-      }
-      return next;
-    });
-    setGoogleSyncedDays(new Set());
-  }, [googleSyncedDays]);
+  const clearGoogleEvents = useCallback(() => {
+    setGoogleEvents([]);
+  }, []);
 
   const grid: CalendarWeek[] = useMemo(
     () => buildCalendarGrid(displayedMonth),
@@ -71,13 +64,13 @@ export function useCalendarState() {
   return {
     displayedMonth,
     daysOff,
-    googleSyncedDays,
+    googleEvents,
     grid,
     results,
     goToPreviousMonth,
     goToNextMonth,
     toggleDay,
     syncFromGoogle,
-    clearGoogleDays,
+    clearGoogleEvents,
   };
 }
