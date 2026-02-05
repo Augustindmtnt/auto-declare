@@ -19,7 +19,8 @@ export function eventMatchesKeyword(eventSummary: string): boolean {
   return DAYS_OFF_KEYWORDS.some((keyword) => lowerSummary.includes(keyword));
 }
 
-export function extractDatesFromEvent(event: GoogleCalendarEvent): string[] {
+// Returns all dates (YYYY-MM-DD) that an event spans
+export function getEventsForDate(event: GoogleCalendarEvent): string[] {
   const dates: string[] = [];
 
   const startDate = parseISO(event.start);
@@ -54,7 +55,7 @@ export function filterEventsForDaysOff(
 
   for (const event of events) {
     if (event.summary && eventMatchesKeyword(event.summary)) {
-      const dates = extractDatesFromEvent(event);
+      const dates = getEventsForDate(event);
       for (const date of dates) {
         datesSet.add(date);
       }

@@ -31,6 +31,6 @@ export interface DeclarationResult {
 export interface GoogleCalendarEvent {
   id: string;
   summary: string;
-  start: string; // ISO date string
-  end: string; // ISO date string
+  start: string; // "YYYY-MM-DD"
+  end: string; // "YYYY-MM-DD" (exclusive for multi-day events)
 }

@@ -9,40 +9,33 @@ export default function DeclarationApp() {
   const {
     displayedMonth,
     daysOff,
-    googleSyncedDays,
+    googleEvents,
     grid,
     results,
     goToPreviousMonth,
     goToNextMonth,
     toggleDay,
     syncFromGoogle,
-    clearGoogleDays,
+    clearGoogleEvents,
   } = useCalendarState();
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="max-w-3xl mx-auto space-y-6">
-        <header className="text-center space-y-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Auto-URSSAF</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Calcul des déclarations Pajemploi
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <GoogleSyncButton
-              displayedMonth={displayedMonth}
-              onSync={syncFromGoogle}
-              onClear={clearGoogleDays}
-              syncedCount={googleSyncedDays.size}
-            />
-          </div>
+      <div className="max-w-5xl mx-auto space-y-6">
+        <header className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-gray-900">autodeclare</h1>
+          <GoogleSyncButton
+            onSync={syncFromGoogle}
+            onClear={clearGoogleEvents}
+            isSynced={googleEvents.length > 0}
+          />
         </header>
 
         <Calendar
           displayedMonth={displayedMonth}
           grid={grid}
           daysOff={daysOff}
+          googleEvents={googleEvents}
           onPrevious={goToPreviousMonth}
           onNext={goToNextMonth}
           onToggle={toggleDay}

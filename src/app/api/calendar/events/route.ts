@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { auth } from "@/lib/auth";
-import { filterEventsForDaysOff } from "@/lib/google-calendar";
 import { GoogleCalendarEvent } from "@/lib/types";
 
 export async function GET(request: NextRequest) {
@@ -32,6 +31,10 @@ export async function GET(request: NextRequest) {
     const calendarList = await calendar.calendarList.list();
     const calendars = calendarList.data.items || [];
 
+    // Convert dates to ISO format for Google Calendar API
+    const timeMinISO = new Date(timeMin).toISOString();
+    const timeMaxISO = new Date(timeMax).toISOString();
+
     const allEvents: GoogleCalendarEvent[] = [];
 
     // Fetch events from each calendar
@@ -41,8 +44,8 @@ export async function GET(request: NextRequest) {
       try {
         const eventsResponse = await calendar.events.list({
           calendarId: cal.id,
-          timeMin,
-          timeMax,
+          timeMin: timeMinISO,
+          timeMax: timeMaxISO,
           singleEvents: true,
           orderBy: "startTime",
         });
@@ -50,7 +53,7 @@ export async function GET(request: NextRequest) {
         const events = eventsResponse.data.items || [];
 
         for (const event of events) {
-          if (event.id && event.summary) {
+          if (event.id) {
             // Handle all-day events (date) vs timed events (dateTime)
             const start = event.start?.date || event.start?.dateTime;
             const end = event.end?.date || event.end?.dateTime;
@@ -58,7 +61,7 @@ export async function GET(request: NextRequest) {
             if (start && end) {
               allEvents.push({
                 id: event.id,
-                summary: event.summary,
+                summary: event.summary || "(Sans titre)",
                 start: start.split("T")[0],
                 end: end.split("T")[0],
               });
@@ -71,9 +74,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const daysOff = filterEventsForDaysOff(allEvents);
-
-    return NextResponse.json({ daysOff, eventCount: allEvents.length });
+    return NextResponse.json({ events: allEvents });
   } catch (error) {
     console.error("Calendar API error:", error);
     return NextResponse.json(
