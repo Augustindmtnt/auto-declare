@@ -49,7 +49,7 @@ export default function CalendarDay({ day, isWorked, events, onToggle }: Calenda
 
   return (
     <button
-      className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col ${bgClass}`}
+      className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col cursor-pointer ${bgClass}`}
       onClick={() => onToggle(day.dateKey)}
     >
       <div className="text-center w-full flex justify-center items-center gap-1">

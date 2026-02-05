@@ -18,7 +18,7 @@ export default function CopyButton({ value }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className="ml-2 p-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+      className="ml-2 p-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
       aria-label={`Copier ${value}`}
       title="Copier"
     >

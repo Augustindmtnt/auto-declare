@@ -23,7 +23,7 @@ export default function CalendarHeader({
       <div className="flex items-center gap-1">
         <button
           onClick={onPrevious}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-600 cursor-pointer"
           aria-label="Mois précédent"
         >
           <svg
@@ -41,7 +41,7 @@ export default function CalendarHeader({
         </button>
         <button
           onClick={onNext}
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-600 cursor-pointer"
           aria-label="Mois suivant"
         >
           <svg
