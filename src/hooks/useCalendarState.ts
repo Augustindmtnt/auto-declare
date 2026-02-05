@@ -11,17 +11,25 @@ export function useCalendarState() {
   const [displayedMonth, setDisplayedMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
-  const [daysOff, setDaysOff] = useState<Set<string>>(() => {
-    if (typeof window === "undefined") return new Set();
-    const saved = localStorage.getItem("daysOff");
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  });
+  const [daysOff, setDaysOff] = useState<Set<string>>(() => new Set());
+  const [isHydrated, setIsHydrated] = useState(false);
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
 
-  // Persist daysOff to localStorage
+  // Load daysOff from localStorage after hydration
   useEffect(() => {
-    localStorage.setItem("daysOff", JSON.stringify([...daysOff]));
-  }, [daysOff]);
+    const saved = localStorage.getItem("daysOff");
+    if (saved) {
+      setDaysOff(new Set(JSON.parse(saved)));
+    }
+    setIsHydrated(true);
+  }, []);
+
+  // Persist daysOff to localStorage (only after hydration to avoid overwriting)
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem("daysOff", JSON.stringify([...daysOff]));
+    }
+  }, [daysOff, isHydrated]);
 
   const goToPreviousMonth = useCallback(() => {
     setDisplayedMonth((m) => subMonths(m, 1));
