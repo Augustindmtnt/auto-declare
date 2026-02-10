@@ -1,3 +1,6 @@
+import { loadEnvFile } from "node:process";
+try { loadEnvFile(); } catch {}
+
 import { startServer } from "./server.js";
 
 console.log("=================================");
