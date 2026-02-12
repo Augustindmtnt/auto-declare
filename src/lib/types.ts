@@ -26,6 +26,7 @@ export interface DeclarationResult {
   workedDays: number;
   maintenanceAllowance: number;
   mealAllowance: number;
+  paidLeaveDays: number;
   sickLeaveDays: number;
   sickLeaveHours: number;
   sickLeaveDeduction: number;

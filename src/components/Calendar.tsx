@@ -12,10 +12,11 @@ interface CalendarProps {
   grid: CalendarWeek[];
   daysOff: Set<string>;
   sickLeaveDays: Set<string>;
+  paidLeaveDays: Set<string>;
   googleEvents: GoogleCalendarEvent[];
   onPrevious: () => void;
   onNext: () => void;
-  onSetDayState: (dateKey: string, state: "worked" | "off" | "sick") => void;
+  onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "paid_leave") => void;
 }
 
 export default function Calendar({
@@ -23,6 +24,7 @@ export default function Calendar({
   grid,
   daysOff,
   sickLeaveDays,
+  paidLeaveDays,
   googleEvents,
   onPrevious,
   onNext,
@@ -69,8 +71,9 @@ export default function Calendar({
             <CalendarDay
               key={day.dateKey}
               day={day}
-              isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey)}
+              isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey)}
               isSickLeave={day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
+              isPaidLeave={day.isBusinessDay && paidLeaveDays.has(day.dateKey)}
               events={eventsByDate.get(day.dateKey) || []}
               onSetDayState={onSetDayState}
             />

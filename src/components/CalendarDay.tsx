@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect } from "react";
 import { CalendarDay as CalendarDayType, GoogleCalendarEvent } from "@/lib/types";
 
-type DayStateValue = "worked" | "off" | "sick";
+type DayStateValue = "worked" | "off" | "sick" | "paid_leave";
 
 interface CalendarDayProps {
   day: CalendarDayType;
   isWorked: boolean;
   isSickLeave: boolean;
+  isPaidLeave: boolean;
   events: GoogleCalendarEvent[];
   onSetDayState: (dateKey: string, state: DayStateValue) => void;
 }
@@ -17,9 +18,10 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "worked", label: "Travaillé", dot: "bg-blue-500" },
   { value: "off", label: "Absent", dot: null },
   { value: "sick", label: "Maladie / sans solde", dot: "bg-rose-500" },
+  { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
 
-export default function CalendarDay({ day, isWorked, isSickLeave, events, onSetDayState }: CalendarDayProps) {
+export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, events, onSetDayState }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -61,7 +63,7 @@ export default function CalendarDay({ day, isWorked, isSickLeave, events, onSetD
     );
   }
 
-  const currentState: DayStateValue = isSickLeave ? "sick" : isWorked ? "worked" : "off";
+  const currentState: DayStateValue = isSickLeave ? "sick" : isPaidLeave ? "paid_leave" : isWorked ? "worked" : "off";
 
   // Determine background based on state
   let bgClass: string;
@@ -69,6 +71,10 @@ export default function CalendarDay({ day, isWorked, isSickLeave, events, onSetD
     bgClass = day.isCurrentMonth
       ? "bg-rose-50 hover:bg-rose-100"
       : "bg-rose-50/50 hover:bg-rose-100/50";
+  } else if (isPaidLeave) {
+    bgClass = day.isCurrentMonth
+      ? "bg-amber-50 hover:bg-amber-100"
+      : "bg-amber-50/50 hover:bg-amber-100/50";
   } else if (isWorked) {
     bgClass = day.isCurrentMonth
       ? "bg-blue-50 hover:bg-blue-100"
@@ -101,7 +107,10 @@ export default function CalendarDay({ day, isWorked, isSickLeave, events, onSetD
           {isSickLeave && (
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
           )}
-          {isWorked && !isSickLeave && (
+          {isPaidLeave && (
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          )}
+          {isWorked && !isSickLeave && !isPaidLeave && (
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           )}
         </div>
