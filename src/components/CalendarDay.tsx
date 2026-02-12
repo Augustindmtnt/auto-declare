@@ -21,6 +21,7 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
 
 export default function CalendarDay({ day, isWorked, isSickLeave, events, onSetDayState }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
+  const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const dayNumber = day.date.getDate();
 
@@ -84,7 +85,14 @@ export default function CalendarDay({ day, isWorked, isSickLeave, events, onSetD
     <div ref={ref} className="relative">
       <button
         className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col cursor-pointer ${bgClass}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (!open && ref.current) {
+            const rect = ref.current.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            setOpenAbove(spaceBelow < 120);
+          }
+          setOpen((v) => !v);
+        }}
       >
         <div className="text-center w-full flex justify-center items-center gap-1">
           <span className={`text-xs font-medium ${textClass}`}>
@@ -101,7 +109,9 @@ export default function CalendarDay({ day, isWorked, isSickLeave, events, onSetD
       </button>
 
       {open && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 z-20 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[10rem]">
+        <div className={`absolute left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[10rem] ${
+          openAbove ? "bottom-full mb-1" : "top-full mt-1"
+        }`}>
           {STATE_OPTIONS.map((opt) => (
             <button
               key={opt.value}
