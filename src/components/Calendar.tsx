@@ -15,7 +15,7 @@ interface CalendarProps {
   googleEvents: GoogleCalendarEvent[];
   onPrevious: () => void;
   onNext: () => void;
-  onToggle: (dateKey: string) => void;
+  onSetDayState: (dateKey: string, state: "worked" | "off" | "sick") => void;
 }
 
 export default function Calendar({
@@ -26,7 +26,7 @@ export default function Calendar({
   googleEvents,
   onPrevious,
   onNext,
-  onToggle,
+  onSetDayState,
 }: CalendarProps) {
   // Build a map of dateKey -> events for efficient lookup
   const eventsByDate = useMemo(() => {
@@ -72,7 +72,7 @@ export default function Calendar({
               isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey)}
               isSickLeave={day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
               events={eventsByDate.get(day.dateKey) || []}
-              onToggle={onToggle}
+              onSetDayState={onSetDayState}
             />
           ))
         )}

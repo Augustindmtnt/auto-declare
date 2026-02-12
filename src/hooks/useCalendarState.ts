@@ -70,21 +70,13 @@ export function useCalendarState() {
     setDisplayedMonth((m) => addMonths(m, 1));
   }, []);
 
-  // 3-state toggle: worked → dayOff → sickLeave → worked
-  const toggleDay = useCallback((dateKey: string) => {
+  const setDayState = useCallback((dateKey: string, state: "worked" | "off" | "sick") => {
     setDayStates((prev) => {
       const next = new Map(prev);
-      const current = prev.get(dateKey);
-
-      if (!current) {
-        // worked → off
-        next.set(dateKey, "off");
-      } else if (current === "off") {
-        // off → sick
-        next.set(dateKey, "sick");
-      } else {
-        // sick → worked
+      if (state === "worked") {
         next.delete(dateKey);
+      } else {
+        next.set(dateKey, state);
       }
       return next;
     });
@@ -120,7 +112,7 @@ export function useCalendarState() {
     results,
     goToPreviousMonth,
     goToNextMonth,
-    toggleDay,
+    setDayState,
     syncFromGoogle,
     clearGoogleEvents,
   };

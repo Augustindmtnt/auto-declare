@@ -15,7 +15,7 @@ export default function DeclarationApp() {
     results,
     goToPreviousMonth,
     goToNextMonth,
-    toggleDay,
+    setDayState,
     syncFromGoogle,
     clearGoogleEvents,
   } = useCalendarState();
@@ -40,7 +40,7 @@ export default function DeclarationApp() {
           googleEvents={googleEvents}
           onPrevious={goToPreviousMonth}
           onNext={goToNextMonth}
-          onToggle={toggleDay}
+          onSetDayState={setDayState}
         />
 
         <ResultsDashboard results={results} />
