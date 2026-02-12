@@ -26,6 +26,12 @@ export interface DeclarationResult {
   workedDays: number;
   maintenanceAllowance: number;
   mealAllowance: number;
+  sickLeaveDays: number;
+  sickLeaveHours: number;
+  sickLeaveDeduction: number;
+  normalHoursInMonth: number;
+  hourlyRate: number;
+  adjustedSalary: number;
 }
 
 export interface GoogleCalendarEvent {

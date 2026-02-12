@@ -11,6 +11,7 @@ interface CalendarProps {
   displayedMonth: Date;
   grid: CalendarWeek[];
   daysOff: Set<string>;
+  sickLeaveDays: Set<string>;
   googleEvents: GoogleCalendarEvent[];
   onPrevious: () => void;
   onNext: () => void;
@@ -21,6 +22,7 @@ export default function Calendar({
   displayedMonth,
   grid,
   daysOff,
+  sickLeaveDays,
   googleEvents,
   onPrevious,
   onNext,
@@ -67,7 +69,8 @@ export default function Calendar({
             <CalendarDay
               key={day.dateKey}
               day={day}
-              isWorked={day.isBusinessDay && !daysOff.has(day.dateKey)}
+              isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey)}
+              isSickLeave={day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
               events={eventsByDate.get(day.dateKey) || []}
               onToggle={onToggle}
             />

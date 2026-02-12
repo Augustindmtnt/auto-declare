@@ -9,6 +9,7 @@ export default function DeclarationApp() {
   const {
     displayedMonth,
     daysOff,
+    sickLeaveDays,
     googleEvents,
     grid,
     results,
@@ -35,6 +36,7 @@ export default function DeclarationApp() {
           displayedMonth={displayedMonth}
           grid={grid}
           daysOff={daysOff}
+          sickLeaveDays={sickLeaveDays}
           googleEvents={googleEvents}
           onPrevious={goToPreviousMonth}
           onNext={goToNextMonth}

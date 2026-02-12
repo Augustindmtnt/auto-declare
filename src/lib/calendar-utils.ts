@@ -10,8 +10,10 @@ import {
   isToday,
   getISOWeek,
   getISOWeekYear,
+  getDay,
 } from "date-fns";
 import { CalendarDay, CalendarWeek } from "./types";
+import { HOURS_MON_THU, HOURS_FRI } from "./constants";
 
 /**
  * Build a calendar grid for the given month.
@@ -58,6 +60,101 @@ export function getWeekKey(date: Date): string {
 }
 
 /**
+ * Compute Easter Sunday for a given year using the Meeus/Jones/Butcher algorithm.
+ */
+export function computeEasterDate(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+/**
+ * Get all French bank holidays (jours fériés) for a given year as "YYYY-MM-DD" strings.
+ */
+export function getBankHolidays(year: number): Set<string> {
+  const holidays: Date[] = [
+    new Date(year, 0, 1),   // Jour de l'an
+    new Date(year, 4, 1),   // Fête du travail
+    new Date(year, 4, 8),   // Victoire 1945
+    new Date(year, 6, 14),  // Fête nationale
+    new Date(year, 7, 15),  // Assomption
+    new Date(year, 10, 1),  // Toussaint
+    new Date(year, 10, 11), // Armistice
+    new Date(year, 11, 25), // Noël
+  ];
+
+  const easter = computeEasterDate(year);
+  // Lundi de Pâques (Easter Monday)
+  holidays.push(new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() + 1));
+  // Ascension (Easter + 39 days)
+  holidays.push(new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() + 39));
+  // Lundi de Pentecôte (Easter + 50 days)
+  holidays.push(new Date(easter.getFullYear(), easter.getMonth(), easter.getDate() + 50));
+
+  return new Set(holidays.map((d) => format(d, "yyyy-MM-dd")));
+}
+
+/**
+ * Get the number of work hours for a given day.
+ * Mon-Thu: 9.25h, Fri: 8.75h, Weekend: 0h
+ */
+export function getHoursForDay(date: Date): number {
+  const dow = getDay(date); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+  if (dow === 0 || dow === 6) return 0;
+  if (dow === 5) return HOURS_FRI;
+  return HOURS_MON_THU;
+}
+
+/**
+ * Count the normal (expected) work hours in a month,
+ * excluding weekends and bank holidays.
+ */
+export function countNormalHoursInMonth(month: Date): number {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const holidays = getBankHolidays(month.getFullYear());
+
+  let total = 0;
+  for (const d of days) {
+    if (isWeekend(d)) continue;
+    if (holidays.has(format(d, "yyyy-MM-dd"))) continue;
+    total += getHoursForDay(d);
+  }
+  return total;
+}
+
+/**
+ * Count the total hours of sick leave days in a month.
+ */
+export function countSickLeaveHours(month: Date, sickLeaveDays: Set<string>): number {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+
+  let total = 0;
+  for (const d of days) {
+    const key = format(d, "yyyy-MM-dd");
+    if (sickLeaveDays.has(key)) {
+      total += getHoursForDay(d);
+    }
+  }
+  return total;
+}
+
+/**
  * Determine which ISO weeks have all 5 business days worked,
  * and whether their majored hours count for the displayed month.
  *
@@ -71,7 +168,8 @@ export function getWeekKey(date: Date): string {
  */
 export function countMajoredWeeks(
   displayedMonth: Date,
-  daysOff: Set<string>
+  daysOff: Set<string>,
+  sickLeaveDays: Set<string> = new Set()
 ): number {
   const grid = buildCalendarGrid(displayedMonth);
   const displayedMonthIndex = displayedMonth.getMonth();
@@ -94,8 +192,10 @@ export function countMajoredWeeks(
     // A full work week needs exactly 5 business days
     if (businessDays.length !== 5) continue;
 
-    // All must be worked (not in daysOff)
-    const allWorked = businessDays.every((d) => !daysOff.has(d.dateKey));
+    // All must be worked (not in daysOff or sickLeaveDays)
+    const allWorked = businessDays.every(
+      (d) => !daysOff.has(d.dateKey) && !sickLeaveDays.has(d.dateKey)
+    );
     if (!allWorked) continue;
 
     // Determine which month this week's majored hours count for
@@ -132,13 +232,17 @@ export function countMajoredWeeks(
  */
 export function countWorkedDays(
   displayedMonth: Date,
-  daysOff: Set<string>
+  daysOff: Set<string>,
+  sickLeaveDays: Set<string> = new Set()
 ): number {
   const monthStart = startOfMonth(displayedMonth);
   const monthEnd = endOfMonth(displayedMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  return days.filter((d) => !isWeekend(d) && !daysOff.has(format(d, "yyyy-MM-dd"))).length;
+  return days.filter((d) => {
+    const key = format(d, "yyyy-MM-dd");
+    return !isWeekend(d) && !daysOff.has(key) && !sickLeaveDays.has(key);
+  }).length;
 }
 
 /**

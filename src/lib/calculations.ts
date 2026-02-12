@@ -1,5 +1,10 @@
 import { ChildConfig, DeclarationResult } from "./types";
-import { countMajoredWeeks, countWorkedDays } from "./calendar-utils";
+import {
+  countMajoredWeeks,
+  countWorkedDays,
+  countNormalHoursInMonth,
+  countSickLeaveHours,
+} from "./calendar-utils";
 import { MAINTENANCE_RATE, MEAL_RATE } from "./constants";
 
 const MAJORED_HOURS_PER_WEEK = 0.75;
@@ -10,14 +15,21 @@ const MAJORED_HOURS_PER_WEEK = 0.75;
 export function computeDeclaration(
   child: ChildConfig,
   displayedMonth: Date,
-  daysOff: Set<string>
+  daysOff: Set<string>,
+  sickLeaveDays: Set<string> = new Set()
 ): DeclarationResult {
-  const majoredWeeks = countMajoredWeeks(displayedMonth, daysOff);
+  const majoredWeeks = countMajoredWeeks(displayedMonth, daysOff, sickLeaveDays);
   const majoredHoursCount = majoredWeeks * MAJORED_HOURS_PER_WEEK;
   const majoredHoursAmount = majoredHoursCount * child.majoredHourRate;
-  const totalSalary = child.monthlySalary + majoredHoursAmount;
 
-  const workedDays = countWorkedDays(displayedMonth, daysOff);
+  const normalHoursInMonth = countNormalHoursInMonth(displayedMonth);
+  const hourlyRate = normalHoursInMonth > 0 ? child.monthlySalary / normalHoursInMonth : 0;
+  const sickLeaveHours = countSickLeaveHours(displayedMonth, sickLeaveDays);
+  const sickLeaveDeduction = hourlyRate * sickLeaveHours;
+  const adjustedSalary = child.monthlySalary - sickLeaveDeduction;
+  const totalSalary = adjustedSalary + majoredHoursAmount;
+
+  const workedDays = countWorkedDays(displayedMonth, daysOff, sickLeaveDays);
   const maintenanceAllowance = workedDays * MAINTENANCE_RATE;
   const mealAllowance = workedDays * MEAL_RATE;
 
@@ -30,5 +42,11 @@ export function computeDeclaration(
     workedDays,
     maintenanceAllowance,
     mealAllowance,
+    sickLeaveDays: sickLeaveDays.size,
+    sickLeaveHours,
+    sickLeaveDeduction,
+    normalHoursInMonth,
+    hourlyRate,
+    adjustedSalary,
   };
 }

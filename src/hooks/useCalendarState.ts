@@ -7,29 +7,60 @@ import { computeDeclaration } from "@/lib/calculations";
 import { CHILDREN } from "@/lib/constants";
 import { CalendarWeek, DeclarationResult, GoogleCalendarEvent } from "@/lib/types";
 
+type DayState = "off" | "sick";
+
 export function useCalendarState() {
   const [displayedMonth, setDisplayedMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
-  const [daysOff, setDaysOff] = useState<Set<string>>(() => new Set());
+  const [dayStates, setDayStates] = useState<Map<string, DayState>>(() => new Map());
   const [isHydrated, setIsHydrated] = useState(false);
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
 
-  // Load daysOff from localStorage after hydration
+  // Derive daysOff and sickLeaveDays from combined state
+  const daysOff = useMemo(
+    () => new Set([...dayStates].filter(([, s]) => s === "off").map(([k]) => k)),
+    [dayStates]
+  );
+  const sickLeaveDays = useMemo(
+    () => new Set([...dayStates].filter(([, s]) => s === "sick").map(([k]) => k)),
+    [dayStates]
+  );
+
+  // Load from localStorage after hydration (supports both old and new format)
   useEffect(() => {
-    const saved = localStorage.getItem("daysOff");
-    if (saved) {
-      setDaysOff(new Set(JSON.parse(saved)));
+    const map = new Map<string, DayState>();
+
+    const savedDaysOff = localStorage.getItem("daysOff");
+    if (savedDaysOff) {
+      for (const key of JSON.parse(savedDaysOff)) {
+        map.set(key, "off");
+      }
     }
+    const savedSickLeave = localStorage.getItem("sickLeaveDays");
+    if (savedSickLeave) {
+      for (const key of JSON.parse(savedSickLeave)) {
+        map.set(key, "sick");
+      }
+    }
+
+    if (map.size > 0) setDayStates(map);
     setIsHydrated(true);
   }, []);
 
-  // Persist daysOff to localStorage (only after hydration to avoid overwriting)
+  // Persist to localStorage (as separate keys for backward compat)
   useEffect(() => {
     if (isHydrated) {
-      localStorage.setItem("daysOff", JSON.stringify([...daysOff]));
+      const off: string[] = [];
+      const sick: string[] = [];
+      for (const [key, state] of dayStates) {
+        if (state === "off") off.push(key);
+        else if (state === "sick") sick.push(key);
+      }
+      localStorage.setItem("daysOff", JSON.stringify(off));
+      localStorage.setItem("sickLeaveDays", JSON.stringify(sick));
     }
-  }, [daysOff, isHydrated]);
+  }, [dayStates, isHydrated]);
 
   const goToPreviousMonth = useCallback(() => {
     setDisplayedMonth((m) => subMonths(m, 1));
@@ -39,13 +70,21 @@ export function useCalendarState() {
     setDisplayedMonth((m) => addMonths(m, 1));
   }, []);
 
+  // 3-state toggle: worked → dayOff → sickLeave → worked
   const toggleDay = useCallback((dateKey: string) => {
-    setDaysOff((prev) => {
-      const next = new Set(prev);
-      if (next.has(dateKey)) {
-        next.delete(dateKey);
+    setDayStates((prev) => {
+      const next = new Map(prev);
+      const current = prev.get(dateKey);
+
+      if (!current) {
+        // worked → off
+        next.set(dateKey, "off");
+      } else if (current === "off") {
+        // off → sick
+        next.set(dateKey, "sick");
       } else {
-        next.add(dateKey);
+        // sick → worked
+        next.delete(dateKey);
       }
       return next;
     });
@@ -65,13 +104,17 @@ export function useCalendarState() {
   );
 
   const results: DeclarationResult[] = useMemo(
-    () => CHILDREN.map((child) => computeDeclaration(child, displayedMonth, daysOff)),
-    [displayedMonth, daysOff]
+    () =>
+      CHILDREN.map((child) =>
+        computeDeclaration(child, displayedMonth, daysOff, sickLeaveDays)
+      ),
+    [displayedMonth, daysOff, sickLeaveDays]
   );
 
   return {
     displayedMonth,
     daysOff,
+    sickLeaveDays,
     googleEvents,
     grid,
     results,

@@ -5,11 +5,12 @@ import { CalendarDay as CalendarDayType, GoogleCalendarEvent } from "@/lib/types
 interface CalendarDayProps {
   day: CalendarDayType;
   isWorked: boolean;
+  isSickLeave: boolean;
   events: GoogleCalendarEvent[];
   onToggle: (dateKey: string) => void;
 }
 
-export default function CalendarDay({ day, isWorked, events, onToggle }: CalendarDayProps) {
+export default function CalendarDay({ day, isWorked, isSickLeave, events, onToggle }: CalendarDayProps) {
   const dayNumber = day.date.getDate();
 
   // Weekend cells
@@ -36,14 +37,21 @@ export default function CalendarDay({ day, isWorked, events, onToggle }: Calenda
     );
   }
 
-  // Determine background based on worked status
-  const bgClass = isWorked
-    ? day.isCurrentMonth
+  // Determine background based on state: worked (blue), off (white), sick leave (rose)
+  let bgClass: string;
+  if (isSickLeave) {
+    bgClass = day.isCurrentMonth
+      ? "bg-rose-50 hover:bg-rose-100"
+      : "bg-rose-50/50 hover:bg-rose-100/50";
+  } else if (isWorked) {
+    bgClass = day.isCurrentMonth
       ? "bg-blue-50 hover:bg-blue-100"
-      : "bg-blue-50/50 hover:bg-blue-100/50"
-    : day.isCurrentMonth
+      : "bg-blue-50/50 hover:bg-blue-100/50";
+  } else {
+    bgClass = day.isCurrentMonth
       ? "bg-white hover:bg-gray-50"
       : "bg-gray-50/30 hover:bg-gray-100/50";
+  }
 
   const textClass = day.isCurrentMonth ? "text-gray-900" : "text-gray-400";
 
@@ -56,7 +64,10 @@ export default function CalendarDay({ day, isWorked, events, onToggle }: Calenda
         <span className={`text-xs font-medium ${textClass}`}>
           {dayNumber}
         </span>
-        {isWorked && (
+        {isSickLeave && (
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+        )}
+        {isWorked && !isSickLeave && (
           <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
         )}
       </div>
