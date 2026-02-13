@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { addMonths, subMonths, endOfMonth } from "date-fns";
-import { buildCalendarGrid, getBankHolidays } from "@/lib/calendar-utils";
+import { buildCalendarGrid } from "@/lib/calendar-utils";
 import { computeDeclaration } from "@/lib/calculations";
 import {
   getReferencePeriod,
@@ -60,19 +60,6 @@ export function useCalendarState() {
       for (const key of JSON.parse(savedPaidLeave)) {
         map.set(key, "paid_leave");
       }
-    }
-
-    // Clean up any states on bank holidays (legacy data)
-    const yearsToCheck = new Set<number>();
-    for (const key of map.keys()) {
-      yearsToCheck.add(parseInt(key.substring(0, 4), 10));
-    }
-    const allBankHolidays = new Set<string>();
-    for (const y of yearsToCheck) {
-      for (const h of getBankHolidays(y)) allBankHolidays.add(h);
-    }
-    for (const h of allBankHolidays) {
-      map.delete(h);
     }
 
     if (map.size > 0) setDayStates(map);
