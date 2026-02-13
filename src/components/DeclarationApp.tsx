@@ -3,6 +3,7 @@
 import { useCalendarState } from "@/hooks/useCalendarState";
 import Calendar from "./Calendar";
 import ResultsDashboard from "./ResultsDashboard";
+import PaidLeavePanel from "./PaidLeavePanel";
 import GoogleSyncButton from "./GoogleSyncButton";
 
 export default function DeclarationApp() {
@@ -19,6 +20,7 @@ export default function DeclarationApp() {
     setDayState,
     syncFromGoogle,
     clearGoogleEvents,
+    paidLeaveCounters,
   } = useCalendarState();
 
   return (
@@ -44,6 +46,8 @@ export default function DeclarationApp() {
           onNext={goToNextMonth}
           onSetDayState={setDayState}
         />
+
+        <PaidLeavePanel counters={paidLeaveCounters} />
 
         <ResultsDashboard results={results} />
       </div>

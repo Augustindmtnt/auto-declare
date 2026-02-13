@@ -1,11 +1,19 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { addMonths, subMonths } from "date-fns";
+import { addMonths, subMonths, endOfMonth } from "date-fns";
 import { buildCalendarGrid } from "@/lib/calendar-utils";
 import { computeDeclaration } from "@/lib/calculations";
+import {
+  getReferencePeriod,
+  getPreviousReferencePeriod,
+  computeWorkedWeeks,
+  computeAcquiredPaidLeave,
+  countPaidLeaveTakenInPeriod,
+} from "@/lib/paid-leave";
 import { CHILDREN } from "@/lib/constants";
 import { CalendarWeek, DeclarationResult, GoogleCalendarEvent } from "@/lib/types";
+import type { PaidLeaveCounters } from "@/components/PaidLeavePanel";
 
 type DayState = "off" | "sick" | "paid_leave";
 
@@ -116,6 +124,44 @@ export function useCalendarState() {
     [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays]
   );
 
+  const paidLeaveCounters: PaidLeaveCounters = useMemo(() => {
+    const monthEnd = endOfMonth(displayedMonth);
+    const currentPeriod = getReferencePeriod(displayedMonth);
+    const previousPeriod = getPreviousReferencePeriod(displayedMonth);
+
+    // Acquired during previous period
+    const workedWeeksPrev = computeWorkedWeeks(
+      previousPeriod.start, previousPeriod.end, daysOff, sickLeaveDays, paidLeaveDays
+    );
+    const acquiredPrevious = computeAcquiredPaidLeave(workedWeeksPrev);
+
+    // Paid leave taken in the current period
+    const takenInCurrent = countPaidLeaveTakenInPeriod(
+      currentPeriod.start, currentPeriod.end, paidLeaveDays
+    );
+
+    // Available = acquired previous - taken in current
+    const available = Math.max(0, acquiredPrevious - takenInCurrent);
+
+    // Acquiring: worked weeks in current period up to end of displayed month
+    const acquiringEnd = monthEnd < currentPeriod.end ? monthEnd : currentPeriod.end;
+    const workedWeeksCurrent = computeWorkedWeeks(
+      currentPeriod.start, acquiringEnd, daysOff, sickLeaveDays, paidLeaveDays
+    );
+    const acquiring = computeAcquiredPaidLeave(workedWeeksCurrent);
+
+    return {
+      acquiredPrevious,
+      takenInCurrent,
+      available,
+      acquiring,
+      currentPeriodStart: currentPeriod.start,
+      currentPeriodEnd: currentPeriod.end,
+      previousPeriodStart: previousPeriod.start,
+      previousPeriodEnd: previousPeriod.end,
+    };
+  }, [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays]);
+
   return {
     displayedMonth,
     daysOff,
@@ -129,5 +175,6 @@ export function useCalendarState() {
     setDayState,
     syncFromGoogle,
     clearGoogleEvents,
+    paidLeaveCounters,
   };
 }

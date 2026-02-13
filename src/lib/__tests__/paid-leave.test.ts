@@ -1,0 +1,184 @@
+import { describe, it, expect } from "vitest";
+import {
+  getReferencePeriod,
+  getPreviousReferencePeriod,
+  computeWorkedWeeks,
+  computeAcquiredPaidLeave,
+  countPaidLeaveTakenInPeriod,
+} from "../paid-leave";
+
+describe("getReferencePeriod", () => {
+  it("returns June–May of same year for a June date", () => {
+    const period = getReferencePeriod(new Date(2025, 5, 15)); // June 15, 2025
+    expect(period.start).toEqual(new Date(2025, 5, 1));
+    expect(period.end).toEqual(new Date(2026, 4, 31));
+  });
+
+  it("returns June–May of same year for a December date", () => {
+    const period = getReferencePeriod(new Date(2025, 11, 1)); // Dec 1, 2025
+    expect(period.start).toEqual(new Date(2025, 5, 1));
+    expect(period.end).toEqual(new Date(2026, 4, 31));
+  });
+
+  it("returns previous June–May for a February date", () => {
+    const period = getReferencePeriod(new Date(2026, 1, 15)); // Feb 15, 2026
+    expect(period.start).toEqual(new Date(2025, 5, 1));
+    expect(period.end).toEqual(new Date(2026, 4, 31));
+  });
+
+  it("returns previous June–May for a May date", () => {
+    const period = getReferencePeriod(new Date(2026, 4, 31)); // May 31, 2026
+    expect(period.start).toEqual(new Date(2025, 5, 1));
+    expect(period.end).toEqual(new Date(2026, 4, 31));
+  });
+
+  it("returns June–May for June 1 boundary", () => {
+    const period = getReferencePeriod(new Date(2025, 5, 1)); // June 1, 2025
+    expect(period.start).toEqual(new Date(2025, 5, 1));
+    expect(period.end).toEqual(new Date(2026, 4, 31));
+  });
+});
+
+describe("getPreviousReferencePeriod", () => {
+  it("returns previous period for a date in current period", () => {
+    const period = getPreviousReferencePeriod(new Date(2026, 1, 15)); // Feb 2026
+    // Current period: June 2025 – May 2026
+    // Previous period: June 2024 – May 2025
+    expect(period.start).toEqual(new Date(2024, 5, 1));
+    expect(period.end).toEqual(new Date(2025, 4, 31));
+  });
+
+  it("returns previous period for a June date", () => {
+    const period = getPreviousReferencePeriod(new Date(2025, 5, 15)); // June 2025
+    // Current: June 2025–May 2026, Previous: June 2024–May 2025
+    expect(period.start).toEqual(new Date(2024, 5, 1));
+    expect(period.end).toEqual(new Date(2025, 4, 31));
+  });
+});
+
+describe("computeWorkedWeeks", () => {
+  const noAbsences = new Set<string>();
+
+  it("computes roughly 52 weeks for a full year with no absences", () => {
+    const start = new Date(2025, 5, 1); // June 1, 2025
+    const end = new Date(2026, 4, 31);  // May 31, 2026
+    const weeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
+    // ~52 weeks, minus bank holidays reducing some week fractions
+    expect(weeks).toBeGreaterThan(49);
+    expect(weeks).toBeLessThanOrEqual(52);
+  });
+
+  it("reduces worked weeks when sick days are present", () => {
+    const start = new Date(2025, 5, 1);
+    const end = new Date(2026, 4, 31);
+    const fullWeeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
+
+    // Mark an entire week as sick (Mon June 2 – Fri June 6, 2025)
+    const sickDays = new Set(["2025-06-02", "2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06"]);
+    const reducedWeeks = computeWorkedWeeks(start, end, noAbsences, sickDays, noAbsences);
+
+    expect(reducedWeeks).toBeLessThan(fullWeeks);
+    expect(fullWeeks - reducedWeeks).toBeCloseTo(1, 1);
+  });
+
+  it("counts paid leave days as worked", () => {
+    const start = new Date(2025, 5, 1);
+    const end = new Date(2026, 4, 31);
+    const fullWeeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
+
+    // Mark a week as paid leave — should still count as worked
+    const paidLeaveDays = new Set(["2025-06-02", "2025-06-03", "2025-06-04", "2025-06-05", "2025-06-06"]);
+    const withPaidLeave = computeWorkedWeeks(start, end, noAbsences, noAbsences, paidLeaveDays);
+
+    expect(withPaidLeave).toEqual(fullWeeks);
+  });
+
+  it("bank holidays reduce worked days in a week", () => {
+    // 2026-01-01 is a bank holiday (Thursday)
+    // Week of Dec 29, 2025 – Jan 2, 2026
+    const start = new Date(2025, 11, 29); // Mon Dec 29
+    const end = new Date(2026, 0, 2);     // Fri Jan 2
+    const weeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
+    // 5 business days minus 1 bank holiday = 4/5 = 0.8
+    expect(weeks).toBeCloseTo(0.8, 1);
+  });
+
+  it("returns 0 for an empty range", () => {
+    const start = new Date(2025, 5, 7);  // Saturday
+    const end = new Date(2025, 5, 8);    // Sunday
+    const weeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
+    expect(weeks).toBe(0);
+  });
+});
+
+describe("computeAcquiredPaidLeave", () => {
+  it("returns 0 for 0 weeks", () => {
+    expect(computeAcquiredPaidLeave(0)).toBe(0);
+  });
+
+  it("returns correct value for 4 weeks", () => {
+    // ceil(4 / 4 * 2.5) = ceil(2.5) = 3
+    expect(computeAcquiredPaidLeave(4)).toBe(3);
+  });
+
+  it("returns correct value for 8 weeks", () => {
+    // ceil(8 / 4 * 2.5) = ceil(5) = 5
+    expect(computeAcquiredPaidLeave(8)).toBe(5);
+  });
+
+  it("returns correct value for partial weeks", () => {
+    // ceil(10 / 4 * 2.5) = ceil(6.25) = 7
+    expect(computeAcquiredPaidLeave(10)).toBe(7);
+  });
+
+  it("caps at 30 for a full year (~52 weeks)", () => {
+    // ceil(52 / 4 * 2.5) = ceil(32.5) = 33 → capped at 30
+    expect(computeAcquiredPaidLeave(52)).toBe(30);
+  });
+
+  it("caps at 30 for 48 weeks", () => {
+    // ceil(48 / 4 * 2.5) = ceil(30) = 30
+    expect(computeAcquiredPaidLeave(48)).toBe(30);
+  });
+});
+
+describe("countPaidLeaveTakenInPeriod", () => {
+  it("counts paid leave days within the period", () => {
+    const paidLeaveDays = new Set([
+      "2025-07-01",
+      "2025-07-02",
+      "2025-12-25",
+      "2024-05-15", // outside period
+    ]);
+    const count = countPaidLeaveTakenInPeriod(
+      new Date(2025, 5, 1),  // June 1, 2025
+      new Date(2026, 4, 31), // May 31, 2026
+      paidLeaveDays
+    );
+    expect(count).toBe(3);
+  });
+
+  it("returns 0 when no paid leave days are in the period", () => {
+    const paidLeaveDays = new Set(["2024-03-15"]);
+    const count = countPaidLeaveTakenInPeriod(
+      new Date(2025, 5, 1),
+      new Date(2026, 4, 31),
+      paidLeaveDays
+    );
+    expect(count).toBe(0);
+  });
+
+  it("handles boundary dates correctly", () => {
+    const paidLeaveDays = new Set([
+      "2025-06-01", // first day of period
+      "2026-05-31", // last day of period (weekend, but still counted)
+      "2026-06-01", // outside
+    ]);
+    const count = countPaidLeaveTakenInPeriod(
+      new Date(2025, 5, 1),
+      new Date(2026, 4, 31),
+      paidLeaveDays
+    );
+    expect(count).toBe(2);
+  });
+});
