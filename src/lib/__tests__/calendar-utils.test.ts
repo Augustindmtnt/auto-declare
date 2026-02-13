@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   buildCalendarGrid,
-  countMajoredWeeks,
+  computeMajoredHours,
   countWorkedDays,
   formatFrenchNumber,
   formatEuro,
@@ -91,21 +91,17 @@ describe("countWorkedDays", () => {
   });
 });
 
-describe("countMajoredWeeks", () => {
-  it("counts full weeks with no days off", () => {
-    // February 2026: Mon-Fri weeks fully within Feb
-    // Feb 2-6, 9-13, 16-20, 23-27 = 4 full weeks within Feb
-    // Week Jan 26-30 spans Jan/Feb → counts for Feb (later month)
-    // But Jan 26-30 is entirely in January, so it counts for January, not Feb
-    // Actually: Jan 26 (Mon) to Jan 30 (Fri) are all in January → counts for Jan
-    // So Feb should have 4 full weeks
+describe("computeMajoredHours", () => {
+  it("computes 0.75h per full week with no days off (Feb 2026)", () => {
+    // Feb 2026: 4 full weeks within Feb, no bank holidays
+    // Each full week: 4×9.25 + 8.75 = 45.75h → 0.75h majored
+    // Total: 4 × 0.75 = 3h
     const month = new Date(2026, 1, 1);
     const daysOff = new Set<string>();
-    expect(countMajoredWeeks(month, daysOff)).toBe(4);
+    expect(computeMajoredHours(month, daysOff)).toBe(3);
   });
 
   it("returns 0 if a day is off in every week", () => {
-    // Remove one day from each full week in February 2026
     const month = new Date(2026, 1, 1);
     const daysOff = new Set([
       "2026-02-02", // Week 1
@@ -113,43 +109,59 @@ describe("countMajoredWeeks", () => {
       "2026-02-16", // Week 3
       "2026-02-23", // Week 4
     ]);
-    expect(countMajoredWeeks(month, daysOff)).toBe(0);
+    // Max hours per broken week: 4×9.25 or 3×9.25+8.75 = 37 or 36.5 < 45
+    expect(computeMajoredHours(month, daysOff)).toBe(0);
   });
 
   it("cross-month week counts for the later month", () => {
-    // March 2026 starts on Sunday
-    // Week Mon Mar 30 - Fri Apr 3 spans March/April → counts for April
-    // So for March, that end-of-month week should NOT count
     const march = new Date(2026, 2, 1);
     const daysOff = new Set<string>();
-    const marchCount = countMajoredWeeks(march, daysOff);
+    const marchHours = computeMajoredHours(march, daysOff);
 
-    // March 2026: full weeks Mon-Fri entirely in March:
-    // Mar 2-6, 9-13, 16-20, 23-27 = 4 weeks
+    // March 2026: 4 full weeks entirely in March, each 0.75h
     // Mar 30-31 + Apr 1-3 spans months → counts for April
-    expect(marchCount).toBe(4);
+    expect(marchHours).toBe(3);
   });
 
   it("cross-month week at start counts for displayed month", () => {
-    // April 2026 starts on Wednesday
-    // Week Mon Mar 30 - Fri Apr 3 spans March/April → counts for April (later month)
     const april = new Date(2026, 3, 1);
     const daysOff = new Set<string>();
-    const aprilCount = countMajoredWeeks(april, daysOff);
+    const aprilHours = computeMajoredHours(april, daysOff);
 
     // April 2026:
-    // Mar30-Apr3 (cross-month, counts for April)
-    // Apr 6-10, 13-17, 20-24, 27-May1
-    // Apr 27-May 1 crosses into May → counts for May, not April
-    // So: 1 (cross from March) + 3 (fully in April: 6-10, 13-17, 20-24) = 4
-    expect(aprilCount).toBe(4);
+    // Mar30-Apr3 (cross-month, counts for April): 0.75h
+    // Apr 6-10 (Easter Monday Apr 6 is bank holiday → 3×9.25+8.75=36.5 < 45 → 0h)
+    // Apr 13-17: 0.75h
+    // Apr 20-24: 0.75h
+    // Apr 27-May1 crosses into May → counts for May
+    // Total: 0.75 + 0 + 0.75 + 0.75 = 2.25h
+    expect(aprilHours).toBe(2.25);
   });
 
-  it("sick leave days break majored weeks", () => {
+  it("sick leave days reduce weekly hours", () => {
     const month = new Date(2026, 1, 1);
     const daysOff = new Set<string>();
-    const sickLeaveDays = new Set(["2026-02-02"]); // breaks week Feb 2-6
-    expect(countMajoredWeeks(month, daysOff, sickLeaveDays)).toBe(3);
+    const sickLeaveDays = new Set(["2026-02-02"]); // Mon removed from week Feb 2-6
+    // That week: 3×9.25 + 8.75 = 36.5h < 45 → 0h majored
+    // Other 3 weeks still full → 3 × 0.75 = 2.25h
+    expect(computeMajoredHours(month, daysOff, sickLeaveDays)).toBe(2.25);
+  });
+
+  it("bank holidays reduce weekly hours below threshold", () => {
+    // May 2026: May 1 (Fri) is a bank holiday
+    // Week Apr 27 - May 1: May 1 is bank holiday → 4×9.25 = 37h < 45 → 0h
+    // This week crosses months so it counts for May
+    const may = new Date(2026, 4, 1);
+    const daysOff = new Set<string>();
+    const hours = computeMajoredHours(may, daysOff);
+
+    // May 2026 weeks:
+    // Apr27-May1: crosses months → May. May 1 bank holiday → 37h < 45 → 0h
+    // May 4-8: May 8 bank holiday → 4×9.25=37h < 45 → 0h
+    // May 11-15: May 14 (Ascension) bank holiday → 3×9.25+8.75=36.5h < 45 → 0h
+    // May 18-22: no holidays → 45.75h → 0.75h
+    // May 25-29: May 25 (Pentecôte) bank holiday → 3×9.25+8.75=36.5h < 45 → 0h
+    expect(hours).toBe(0.75);
   });
 });
 

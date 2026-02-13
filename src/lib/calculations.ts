@@ -1,13 +1,11 @@
 import { ChildConfig, DeclarationResult } from "./types";
 import {
-  countMajoredWeeks,
+  computeMajoredHours,
   countWorkedDays,
   countNormalHoursInMonth,
   countSickLeaveHours,
 } from "./calendar-utils";
 import { MAINTENANCE_RATE, MEAL_RATE } from "./constants";
-
-const MAJORED_HOURS_PER_WEEK = 0.75;
 
 /**
  * Compute declaration values for one child for a given month.
@@ -22,8 +20,7 @@ export function computeDeclaration(
   // Paid leave has the same effect as days off on worked days and majored weeks
   const allDaysOff = new Set([...daysOff, ...paidLeaveDays]);
 
-  const majoredWeeks = countMajoredWeeks(displayedMonth, allDaysOff, sickLeaveDays);
-  const majoredHoursCount = majoredWeeks * MAJORED_HOURS_PER_WEEK;
+  const majoredHoursCount = computeMajoredHours(displayedMonth, allDaysOff, sickLeaveDays);
   const majoredHoursAmount = majoredHoursCount * child.majoredHourRate;
 
   const normalHoursInMonth = countNormalHoursInMonth(displayedMonth);

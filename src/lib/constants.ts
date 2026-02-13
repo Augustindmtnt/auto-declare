@@ -15,6 +15,7 @@ export const CHILDREN: ChildConfig[] = [
 
 export const HOURS_MON_THU = 9.25; // Mon-Thu daily hours
 export const HOURS_FRI = 8.75; // Friday daily hours
+export const MAJORED_HOURS_THRESHOLD = 45; // Weekly hours above which hours are majored
 
 export const MAINTENANCE_RATE = 4; // € per worked day
 export const MEAL_RATE = 4; // € per worked day

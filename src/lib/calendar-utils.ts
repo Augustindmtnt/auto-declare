@@ -13,7 +13,7 @@ import {
   getDay,
 } from "date-fns";
 import { CalendarDay, CalendarWeek } from "./types";
-import { HOURS_MON_THU, HOURS_FRI } from "./constants";
+import { HOURS_MON_THU, HOURS_FRI, MAJORED_HOURS_THRESHOLD } from "./constants";
 
 /**
  * Build a calendar grid for the given month.
@@ -155,18 +155,17 @@ export function countSickLeaveHours(month: Date, sickLeaveDays: Set<string>): nu
 }
 
 /**
- * Determine which ISO weeks have all 5 business days worked,
- * and whether their majored hours count for the displayed month.
+ * Compute majored hours for the displayed month.
  *
- * Rules:
- * - A week qualifies if all Mon-Fri days are worked (not in daysOff, and are business days)
- * - If all 5 days are in the same month → counts for that month
+ * For each ISO week visible in the calendar grid, sum the actual worked hours
+ * (excluding days off, sick leave, and bank holidays). Hours above the 45h
+ * threshold are "majored".
+ *
+ * Cross-month attribution:
+ * - If all business days are in one month → counts for that month
  * - If the week spans two months → counts for the LATER month
- *
- * Returns the number of qualifying weeks whose majored hours
- * count for `displayedMonth`.
  */
-export function countMajoredWeeks(
+export function computeMajoredHours(
   displayedMonth: Date,
   daysOff: Set<string>,
   sickLeaveDays: Set<string> = new Set()
@@ -174,6 +173,20 @@ export function countMajoredWeeks(
   const grid = buildCalendarGrid(displayedMonth);
   const displayedMonthIndex = displayedMonth.getMonth();
   const displayedYear = displayedMonth.getFullYear();
+
+  // Collect bank holidays for all years visible in the grid
+  const yearsInGrid = new Set<number>();
+  for (const week of grid) {
+    for (const day of week.days) {
+      yearsInGrid.add(day.date.getFullYear());
+    }
+  }
+  const bankHolidays = new Set<string>();
+  for (const year of yearsInGrid) {
+    for (const h of getBankHolidays(year)) {
+      bankHolidays.add(h);
+    }
+  }
 
   // Collect all weeks with their business days
   const weekMap = new Map<string, CalendarDay[]>();
@@ -186,17 +199,20 @@ export function countMajoredWeeks(
     }
   }
 
-  let majoredCount = 0;
+  let totalMajoredHours = 0;
 
   for (const [, businessDays] of weekMap) {
-    // A full work week needs exactly 5 business days
-    if (businessDays.length !== 5) continue;
+    // Sum worked hours for this week
+    let weekHours = 0;
+    for (const d of businessDays) {
+      if (daysOff.has(d.dateKey)) continue;
+      if (sickLeaveDays.has(d.dateKey)) continue;
+      if (bankHolidays.has(d.dateKey)) continue;
+      weekHours += getHoursForDay(d.date);
+    }
 
-    // All must be worked (not in daysOff or sickLeaveDays)
-    const allWorked = businessDays.every(
-      (d) => !daysOff.has(d.dateKey) && !sickLeaveDays.has(d.dateKey)
-    );
-    if (!allWorked) continue;
+    const majoredHours = Math.max(0, weekHours - MAJORED_HOURS_THRESHOLD);
+    if (majoredHours === 0) continue;
 
     // Determine which month this week's majored hours count for
     const months = new Set(
@@ -204,13 +220,12 @@ export function countMajoredWeeks(
     );
 
     if (months.size === 1) {
-      // All in one month — counts for that month
       const day = businessDays[0];
       if (
         day.date.getMonth() === displayedMonthIndex &&
         day.date.getFullYear() === displayedYear
       ) {
-        majoredCount++;
+        totalMajoredHours += majoredHours;
       }
     } else {
       // Spans two months — counts for the LATER month
@@ -219,12 +234,12 @@ export function countMajoredWeeks(
         latestDay.date.getMonth() === displayedMonthIndex &&
         latestDay.date.getFullYear() === displayedYear
       ) {
-        majoredCount++;
+        totalMajoredHours += majoredHours;
       }
     }
   }
 
-  return majoredCount;
+  return totalMajoredHours;
 }
 
 /**
