@@ -2,10 +2,7 @@ import {
   format,
   addDays,
   startOfWeek,
-  isWeekend,
-  eachDayOfInterval,
 } from "date-fns";
-import { getBankHolidays } from "./calendar-utils";
 
 /**
  * Returns the reference period (June 1 – May 31) containing the given date.
@@ -59,16 +56,6 @@ export function computeWorkedWeeks(
   sickLeaveDays: Set<string>,
   paidLeaveDays: Set<string>
 ): number {
-  // Collect bank holidays — include year after periodEnd for boundary weeks
-  const startYear = periodStart.getFullYear();
-  const endYear = periodEnd.getFullYear() + 1;
-  const bankHolidays = new Set<string>();
-  for (let y = startYear; y <= endYear; y++) {
-    for (const h of getBankHolidays(y)) {
-      bankHolidays.add(h);
-    }
-  }
-
   // Find the first Monday on or after periodStart
   let monday = startOfWeek(periodStart, { weekStartsOn: 1 });
   if (monday < periodStart) {
@@ -80,14 +67,15 @@ export function computeWorkedWeeks(
   while (monday <= periodEnd) {
     let workedDays = 0;
 
-    // Always check the full Mon–Fri even if some days fall past periodEnd
+    // Always check the full Mon–Fri even if some days fall past periodEnd.
+    // Bank holidays and paid leave count as worked (they are paid days).
+    // Only days off and sick leave reduce the week.
     for (let i = 0; i < 5; i++) {
       const day = addDays(monday, i);
       const key = format(day, "yyyy-MM-dd");
 
       if (daysOff.has(key)) continue;
       if (sickLeaveDays.has(key)) continue;
-      if (bankHolidays.has(key)) continue;
 
       workedDays++;
     }

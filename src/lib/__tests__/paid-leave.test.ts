@@ -93,14 +93,14 @@ describe("computeWorkedWeeks", () => {
     expect(withPaidLeave).toEqual(fullWeeks);
   });
 
-  it("bank holidays reduce worked days in a week", () => {
+  it("bank holidays count as worked (paid days)", () => {
     // 2026-01-01 is a bank holiday (Thursday)
     // Week of Dec 29, 2025 – Jan 2, 2026
     const start = new Date(2025, 11, 29); // Mon Dec 29
     const end = new Date(2026, 0, 2);     // Fri Jan 2
     const weeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
-    // 5 business days minus 1 bank holiday = 4/5 = 0.8
-    expect(weeks).toBeCloseTo(0.8, 1);
+    // Bank holiday does not reduce the week → 5/5 = 1.0
+    expect(weeks).toBe(1);
   });
 
   it("counts full week when Monday is in period but Fri overflows", () => {
