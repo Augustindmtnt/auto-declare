@@ -22,15 +22,15 @@ interface CalendarProps {
 
 type DayStateValue = "worked" | "off" | "sick" | "paid_leave";
 
-const PAINT_LABELS: Record<DayStateValue, { label: string; dot: string; bg: string }> = {
-  worked: { label: "Travaillé", dot: "bg-blue-500", bg: "bg-blue-50 border-blue-200" },
-  off: { label: "Absent", dot: "bg-gray-400", bg: "bg-gray-50 border-gray-200" },
-  sick: { label: "Maladie / sans solde", dot: "bg-rose-500", bg: "bg-rose-50 border-rose-200" },
-  paid_leave: { label: "Congés payés", dot: "bg-amber-500", bg: "bg-amber-50 border-amber-200" },
+const PAINT_LABELS: Record<DayStateValue, string> = {
+  worked: "Travaillé",
+  off: "Absent",
+  sick: "Maladie",
+  paid_leave: "Congés payés",
 };
 
 function buildPaintCursor(state: DayStateValue): string {
-  const label = PAINT_LABELS[state].label;
+  const label = PAINT_LABELS[state];
   const svgWidth = Math.ceil(27 + label.length * 6 + 8);
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${svgWidth}' height='26' viewBox='0 0 ${svgWidth} 26'><g transform='rotate(-15 12 12)'><rect x='1' y='4' width='8' height='13' rx='1' fill='#fbbf24' stroke='#b45309' stroke-width='0.7'/><line x1='3.5' y1='5' x2='3.5' y2='16' stroke='#d97706' stroke-width='0.5'/><line x1='6.5' y1='5' x2='6.5' y2='16' stroke='#d97706' stroke-width='0.5'/><rect x='9' y='5.5' width='3' height='10' rx='0.3' fill='#9ca3af' stroke='#6b7280' stroke-width='0.5'/><rect x='12' y='7' width='10' height='7' rx='2' fill='#92400e'/></g><text x='27' y='16' font-family='system-ui,sans-serif' font-size='10' font-weight='600' fill='#374151'>${label}</text></svg>`;
   return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 1 13, crosshair`;
@@ -64,10 +64,6 @@ export default function Calendar({
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Shift") setShiftHeld(true);
-      if (e.key === "Escape") {
-        setPaintState(null);
-        setIsPainting(false);
-      }
     }
     function handleKeyUp(e: KeyboardEvent) {
       if (e.key === "Shift") setShiftHeld(false);
@@ -165,24 +161,6 @@ export default function Calendar({
           </div>
         ))}
       </div>
-
-      {/* Paint brush indicator */}
-      {paintState && (
-        <div className={`flex items-center justify-center gap-2 px-3 py-1.5 border-b text-xs ${PAINT_LABELS[paintState].bg}`}>
-          <span className={`w-2 h-2 rounded-full ${PAINT_LABELS[paintState].dot}`} />
-          <span className="text-gray-600">
-            <kbd className="text-[10px] bg-white/60 border border-gray-300 rounded px-1">Maj</kbd> + glisser pour appliquer : <span className="font-medium text-gray-900">{PAINT_LABELS[paintState].label}</span>
-          </span>
-          <button
-            onClick={() => setPaintState(null)}
-            className="ml-1 text-gray-400 hover:text-gray-600 cursor-pointer"
-            title="Échap pour annuler"
-          >
-            ✕
-          </button>
-          <kbd className="ml-1 text-[10px] text-gray-400 bg-white/60 border border-gray-300 rounded px-1">Échap</kbd>
-        </div>
-      )}
 
       {/* Calendar grid */}
       <div
