@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { CalendarDay as CalendarDayType, GoogleCalendarEvent } from "@/lib/types";
 
 type DayStateValue = "worked" | "off" | "sick" | "paid_leave";
@@ -13,6 +13,8 @@ interface CalendarDayProps {
   isBankHoliday: boolean;
   events: GoogleCalendarEvent[];
   onSetDayState: (dateKey: string, state: DayStateValue) => void;
+  onPaintStart: (dateKey: string) => void;
+  onPaintEnter: (dateKey: string) => void;
 }
 
 const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }[] = [
@@ -22,11 +24,25 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
 
-export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isBankHoliday, events, onSetDayState }: CalendarDayProps) {
+export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isBankHoliday, events, onSetDayState, onPaintStart, onPaintEnter }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const didDragRef = useRef(false);
   const dayNumber = day.date.getDate();
+
+  const handleMouseDown = useCallback(() => {
+    didDragRef.current = false;
+    onPaintStart(day.dateKey);
+  }, [onPaintStart, day.dateKey]);
+
+  const handleMouseMove = useCallback(() => {
+    didDragRef.current = true;
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    onPaintEnter(day.dateKey);
+  }, [onPaintEnter, day.dateKey]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -107,7 +123,11 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
     <div ref={ref} className="relative">
       <button
         className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col cursor-pointer ${bgClass}`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
         onClick={() => {
+          if (didDragRef.current) return;
           if (!open && ref.current) {
             const rect = ref.current.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom;

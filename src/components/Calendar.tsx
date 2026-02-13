@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { CalendarWeek, GoogleCalendarEvent } from "@/lib/types";
 import { DAY_LABELS } from "@/lib/constants";
 import { getBankHolidays } from "@/lib/calendar-utils";
@@ -20,6 +20,8 @@ interface CalendarProps {
   onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "paid_leave") => void;
 }
 
+type DayStateValue = "worked" | "off" | "sick" | "paid_leave";
+
 export default function Calendar({
   displayedMonth,
   grid,
@@ -31,6 +33,52 @@ export default function Calendar({
   onNext,
   onSetDayState,
 }: CalendarProps) {
+  const [paintState, setPaintState] = useState<DayStateValue | null>(null);
+  const [isPainting, setIsPainting] = useState(false);
+  const isPaintingRef = useRef(false);
+
+  // Keep ref in sync so the document listener always sees the latest value
+  isPaintingRef.current = isPainting;
+
+  // End painting on mouseup anywhere in the document
+  useEffect(() => {
+    function handleMouseUp() {
+      if (isPaintingRef.current) {
+        setIsPainting(false);
+      }
+    }
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => document.removeEventListener("mouseup", handleMouseUp);
+  }, []);
+
+  // Wrap onSetDayState to also set the paint brush
+  const handleSetDayState = useCallback(
+    (dateKey: string, state: DayStateValue) => {
+      onSetDayState(dateKey, state);
+      setPaintState(state);
+    },
+    [onSetDayState]
+  );
+
+  const handlePaintStart = useCallback(
+    (dateKey: string) => {
+      if (paintState) {
+        onSetDayState(dateKey, paintState);
+        setIsPainting(true);
+      }
+    },
+    [paintState, onSetDayState]
+  );
+
+  const handlePaintEnter = useCallback(
+    (dateKey: string) => {
+      if (isPainting && paintState) {
+        onSetDayState(dateKey, paintState);
+      }
+    },
+    [isPainting, paintState, onSetDayState]
+  );
+
   // Collect bank holidays for all years visible in the grid
   const bankHolidays = useMemo(() => {
     const years = new Set<number>();
@@ -83,7 +131,10 @@ export default function Calendar({
       </div>
 
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 divide-x divide-gray-100">
+      <div
+        className={`grid grid-cols-7 divide-x divide-gray-100${isPainting ? " select-none" : ""}`}
+        onMouseLeave={() => setIsPainting(false)}
+      >
         {grid.map((week) =>
           week.days.map((day) => (
             <CalendarDay
@@ -94,7 +145,9 @@ export default function Calendar({
               isPaidLeave={day.isBusinessDay && paidLeaveDays.has(day.dateKey)}
               isBankHoliday={bankHolidays.has(day.dateKey)}
               events={eventsByDate.get(day.dateKey) || []}
-              onSetDayState={onSetDayState}
+              onSetDayState={handleSetDayState}
+              onPaintStart={handlePaintStart}
+              onPaintEnter={handlePaintEnter}
             />
           ))
         )}
