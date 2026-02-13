@@ -49,12 +49,13 @@ export default function Calendar({
 }: CalendarProps) {
   const [paintState, setPaintState] = useState<DayStateValue | null>(null);
   const [isPainting, setIsPainting] = useState(false);
+  const [shiftHeld, setShiftHeld] = useState(false);
   const isPaintingRef = useRef(false);
 
   // Keep ref in sync so the document listener always sees the latest value
   isPaintingRef.current = isPainting;
 
-  // End painting on mouseup anywhere; clear brush on Escape
+  // Track Shift key, end painting on mouseup, clear brush on Escape
   useEffect(() => {
     function handleMouseUp() {
       if (isPaintingRef.current) {
@@ -62,16 +63,22 @@ export default function Calendar({
       }
     }
     function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Shift") setShiftHeld(true);
       if (e.key === "Escape") {
         setPaintState(null);
         setIsPainting(false);
       }
     }
+    function handleKeyUp(e: KeyboardEvent) {
+      if (e.key === "Shift") setShiftHeld(false);
+    }
     document.addEventListener("mouseup", handleMouseUp);
     document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keyup", handleKeyUp);
     return () => {
       document.removeEventListener("mouseup", handleMouseUp);
       document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
 
@@ -104,8 +111,8 @@ export default function Calendar({
   );
 
   const paintCursor = useMemo(
-    () => (paintState ? buildPaintCursor(paintState) : null),
-    [paintState]
+    () => (shiftHeld && paintState ? buildPaintCursor(paintState) : null),
+    [shiftHeld, paintState]
   );
 
   // Collect bank holidays for all years visible in the grid
@@ -164,7 +171,7 @@ export default function Calendar({
         <div className={`flex items-center justify-center gap-2 px-3 py-1.5 border-b text-xs ${PAINT_LABELS[paintState].bg}`}>
           <span className={`w-2 h-2 rounded-full ${PAINT_LABELS[paintState].dot}`} />
           <span className="text-gray-600">
-            Glisser pour appliquer : <span className="font-medium text-gray-900">{PAINT_LABELS[paintState].label}</span>
+            <kbd className="text-[10px] bg-white/60 border border-gray-300 rounded px-1">Maj</kbd> + glisser pour appliquer : <span className="font-medium text-gray-900">{PAINT_LABELS[paintState].label}</span>
           </span>
           <button
             onClick={() => setPaintState(null)}

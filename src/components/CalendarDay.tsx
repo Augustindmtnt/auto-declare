@@ -30,11 +30,17 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
   const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const didDragRef = useRef(false);
+  const didPaintRef = useRef(false);
   const dayNumber = day.date.getDate();
 
-  const handleMouseDown = useCallback(() => {
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
     didDragRef.current = false;
-    onPaintStart(day.dateKey);
+    if (e.shiftKey) {
+      didPaintRef.current = true;
+      onPaintStart(day.dateKey);
+    } else {
+      didPaintRef.current = false;
+    }
   }, [onPaintStart, day.dateKey]);
 
   const handleMouseMove = useCallback(() => {
@@ -129,7 +135,7 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onClick={() => {
-          if (didDragRef.current || paintCursor) return;
+          if (didDragRef.current || didPaintRef.current) return;
           if (!open && ref.current) {
             const rect = ref.current.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom;
