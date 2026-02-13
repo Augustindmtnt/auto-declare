@@ -18,6 +18,8 @@ interface CalendarDayProps {
   hasPaintBrush: boolean;
 }
 
+const PAINT_CURSOR = `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><line x1='22' y1='2' x2='10' y2='14' stroke='%23475569' stroke-width='2' stroke-linecap='round'/><path d='M10 14 L4 18 L2 22 L6 20 L10 14Z' fill='%23F59E0B' stroke='%23D97706' stroke-width='1'/></svg>") 2 22, crosshair`;
+
 const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }[] = [
   { value: "worked", label: "Travaillé", dot: "bg-blue-500" },
   { value: "off", label: "Absent", dot: null },
@@ -123,7 +125,8 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
   return (
     <div ref={ref} className="relative">
       <button
-        className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col ${hasPaintBrush ? "cursor-crosshair" : "cursor-pointer"} ${bgClass}`}
+        className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col ${hasPaintBrush ? "" : "cursor-pointer"} ${bgClass}`}
+        style={hasPaintBrush ? { cursor: PAINT_CURSOR } : undefined}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}

@@ -47,15 +47,25 @@ export default function Calendar({
   // Keep ref in sync so the document listener always sees the latest value
   isPaintingRef.current = isPainting;
 
-  // End painting on mouseup anywhere in the document
+  // End painting on mouseup anywhere; clear brush on Escape
   useEffect(() => {
     function handleMouseUp() {
       if (isPaintingRef.current) {
         setIsPainting(false);
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setPaintState(null);
+        setIsPainting(false);
+      }
+    }
     document.addEventListener("mouseup", handleMouseUp);
-    return () => document.removeEventListener("mouseup", handleMouseUp);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   // Wrap onSetDayState to also set the paint brush
@@ -147,9 +157,11 @@ export default function Calendar({
           <button
             onClick={() => setPaintState(null)}
             className="ml-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+            title="Échap pour annuler"
           >
             ✕
           </button>
+          <kbd className="ml-1 text-[10px] text-gray-400 bg-white/60 border border-gray-300 rounded px-1">Échap</kbd>
         </div>
       )}
 
