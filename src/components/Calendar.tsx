@@ -29,6 +29,13 @@ const PAINT_LABELS: Record<DayStateValue, { label: string; dot: string; bg: stri
   paid_leave: { label: "Congés payés", dot: "bg-amber-500", bg: "bg-amber-50 border-amber-200" },
 };
 
+function buildPaintCursor(state: DayStateValue): string {
+  const label = PAINT_LABELS[state].label;
+  const svgWidth = Math.ceil(27 + label.length * 6 + 8);
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${svgWidth}' height='26' viewBox='0 0 ${svgWidth} 26'><g transform='rotate(-15 12 12)'><rect x='1' y='4' width='8' height='13' rx='1' fill='#fbbf24' stroke='#b45309' stroke-width='0.7'/><line x1='3.5' y1='5' x2='3.5' y2='16' stroke='#d97706' stroke-width='0.5'/><line x1='6.5' y1='5' x2='6.5' y2='16' stroke='#d97706' stroke-width='0.5'/><rect x='9' y='5.5' width='3' height='10' rx='0.3' fill='#9ca3af' stroke='#6b7280' stroke-width='0.5'/><rect x='12' y='7' width='10' height='7' rx='2' fill='#92400e'/></g><text x='27' y='16' font-family='system-ui,sans-serif' font-size='10' font-weight='600' fill='#374151'>${label}</text></svg>`;
+  return `url("data:image/svg+xml,${encodeURIComponent(svg)}") 1 13, crosshair`;
+}
+
 export default function Calendar({
   displayedMonth,
   grid,
@@ -94,6 +101,11 @@ export default function Calendar({
       }
     },
     [isPainting, paintState, onSetDayState]
+  );
+
+  const paintCursor = useMemo(
+    () => (paintState ? buildPaintCursor(paintState) : null),
+    [paintState]
   );
 
   // Collect bank holidays for all years visible in the grid
@@ -183,7 +195,7 @@ export default function Calendar({
               onSetDayState={handleSetDayState}
               onPaintStart={handlePaintStart}
               onPaintEnter={handlePaintEnter}
-              hasPaintBrush={paintState !== null}
+              paintCursor={paintCursor}
             />
           ))
         )}

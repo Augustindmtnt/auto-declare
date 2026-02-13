@@ -15,10 +15,8 @@ interface CalendarDayProps {
   onSetDayState: (dateKey: string, state: DayStateValue) => void;
   onPaintStart: (dateKey: string) => void;
   onPaintEnter: (dateKey: string) => void;
-  hasPaintBrush: boolean;
+  paintCursor: string | null;
 }
-
-const PAINT_CURSOR = `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='24' viewBox='0 0 16 24'><rect x='5' y='1' width='6' height='10' rx='2' fill='%2392400e'/><rect x='3' y='11' width='10' height='3' rx='0.5' fill='%239ca3af' stroke='%236b7280' stroke-width='0.6'/><rect x='2' y='14' width='12' height='9' rx='1' fill='%23fbbf24' stroke='%23b45309' stroke-width='0.7'/><line x1='5' y1='15' x2='5' y2='22' stroke='%23d97706' stroke-width='0.5'/><line x1='8' y1='15' x2='8' y2='22' stroke='%23d97706' stroke-width='0.5'/><line x1='11' y1='15' x2='11' y2='22' stroke='%23d97706' stroke-width='0.5'/></svg>") 8 23, crosshair`;
 
 const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }[] = [
   { value: "worked", label: "Travaillé", dot: "bg-blue-500" },
@@ -27,7 +25,7 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
 
-export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isBankHoliday, events, onSetDayState, onPaintStart, onPaintEnter, hasPaintBrush }: CalendarDayProps) {
+export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isBankHoliday, events, onSetDayState, onPaintStart, onPaintEnter, paintCursor }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -125,13 +123,13 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
   return (
     <div ref={ref} className="relative">
       <button
-        className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col ${hasPaintBrush ? "" : "cursor-pointer"} ${bgClass}`}
-        style={hasPaintBrush ? { cursor: PAINT_CURSOR } : undefined}
+        className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col ${paintCursor ? "" : "cursor-pointer"} ${bgClass}`}
+        style={paintCursor ? { cursor: paintCursor } : undefined}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
         onClick={() => {
-          if (didDragRef.current) return;
+          if (didDragRef.current || paintCursor) return;
           if (!open && ref.current) {
             const rect = ref.current.getBoundingClientRect();
             const spaceBelow = window.innerHeight - rect.bottom;
