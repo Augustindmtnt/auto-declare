@@ -41,13 +41,11 @@ export function getPreviousReferencePeriod(date: Date): { start: Date; end: Date
  * Compute the number of worked weeks (prorated) in a period.
  *
  * Iterates each Monday in [periodStart, periodEnd], checks Mon–Fri.
- * A day is "worked" if it is not a day off, not sick, not a bank holiday.
- * Paid leave counts as worked for acquisition purposes.
+ * A week belongs entirely to the period containing its Monday —
+ * even if Tue–Fri fall in the next period, the full week is evaluated.
  *
- * If a week spans two periods, it belongs to the period containing its Monday.
- * The full Mon–Fri is always evaluated (no truncation at period boundary).
- *
- * Week value = workedDays / 5
+ * Bank holidays and paid leave count as worked (paid days).
+ * Only days off and sick leave reduce a week (workedDays / 5).
  */
 export function computeWorkedWeeks(
   periodStart: Date,
