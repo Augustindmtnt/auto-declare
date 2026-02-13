@@ -18,7 +18,7 @@ interface CalendarDayProps {
   hasPaintBrush: boolean;
 }
 
-const PAINT_CURSOR = `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><line x1='22' y1='2' x2='10' y2='14' stroke='%23475569' stroke-width='2' stroke-linecap='round'/><path d='M10 14 L4 18 L2 22 L6 20 L10 14Z' fill='%23F59E0B' stroke='%23D97706' stroke-width='1'/></svg>") 2 22, crosshair`;
+const PAINT_CURSOR = `url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='24' viewBox='0 0 16 24'><rect x='5' y='1' width='6' height='10' rx='2' fill='%2392400e'/><rect x='3' y='11' width='10' height='3' rx='0.5' fill='%239ca3af' stroke='%236b7280' stroke-width='0.6'/><rect x='2' y='14' width='12' height='9' rx='1' fill='%23fbbf24' stroke='%23b45309' stroke-width='0.7'/><line x1='5' y1='15' x2='5' y2='22' stroke='%23d97706' stroke-width='0.5'/><line x1='8' y1='15' x2='8' y2='22' stroke='%23d97706' stroke-width='0.5'/><line x1='11' y1='15' x2='11' y2='22' stroke='%23d97706' stroke-width='0.5'/></svg>") 8 23, crosshair`;
 
 const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }[] = [
   { value: "worked", label: "Travaillé", dot: "bg-blue-500" },
