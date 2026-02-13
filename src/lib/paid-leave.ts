@@ -47,6 +47,9 @@ export function getPreviousReferencePeriod(date: Date): { start: Date; end: Date
  * A day is "worked" if it is not a day off, not sick, not a bank holiday.
  * Paid leave counts as worked for acquisition purposes.
  *
+ * If a week spans two periods, it belongs to the period containing its Monday.
+ * The full Mon–Fri is always evaluated (no truncation at period boundary).
+ *
  * Week value = workedDays / 5
  */
 export function computeWorkedWeeks(
@@ -56,9 +59,9 @@ export function computeWorkedWeeks(
   sickLeaveDays: Set<string>,
   paidLeaveDays: Set<string>
 ): number {
-  // Collect bank holidays for all years in the range
+  // Collect bank holidays — include year after periodEnd for boundary weeks
   const startYear = periodStart.getFullYear();
-  const endYear = periodEnd.getFullYear();
+  const endYear = periodEnd.getFullYear() + 1;
   const bankHolidays = new Set<string>();
   for (let y = startYear; y <= endYear; y++) {
     for (const h of getBankHolidays(y)) {
@@ -77,26 +80,15 @@ export function computeWorkedWeeks(
   while (monday <= periodEnd) {
     let workedDays = 0;
 
+    // Always check the full Mon–Fri even if some days fall past periodEnd
     for (let i = 0; i < 5; i++) {
       const day = addDays(monday, i);
-      if (day > periodEnd) break;
-
       const key = format(day, "yyyy-MM-dd");
 
-      // Skip weekends (shouldn't happen for Mon-Fri but safety check)
-      if (isWeekend(day)) continue;
-
-      // Day off → not worked
       if (daysOff.has(key)) continue;
-
-      // Sick leave → not worked
       if (sickLeaveDays.has(key)) continue;
-
-      // Bank holiday → not worked
       if (bankHolidays.has(key)) continue;
 
-      // Paid leave counts as worked for acquisition
-      // Regular work day also counts
       workedDays++;
     }
 

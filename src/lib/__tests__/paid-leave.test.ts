@@ -103,6 +103,15 @@ describe("computeWorkedWeeks", () => {
     expect(weeks).toBeCloseTo(0.8, 1);
   });
 
+  it("counts full week when Monday is in period but Fri overflows", () => {
+    // Period ends Wed May 31, 2028 — the week of Mon May 29 should count fully
+    const start = new Date(2028, 4, 29); // Mon May 29
+    const end = new Date(2028, 4, 31);   // Wed May 31
+    const weeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
+    // Full Mon–Fri evaluated even though Thu/Fri are past periodEnd → 5/5 = 1.0
+    expect(weeks).toBe(1);
+  });
+
   it("returns 0 for an empty range", () => {
     const start = new Date(2025, 5, 7);  // Saturday
     const end = new Date(2025, 5, 8);    // Sunday
