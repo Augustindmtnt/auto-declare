@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { CalendarWeek, GoogleCalendarEvent } from "@/lib/types";
 import { DAY_LABELS } from "@/lib/constants";
+import { getBankHolidays } from "@/lib/calendar-utils";
 import { getEventsForDate } from "@/lib/google-calendar";
 import CalendarHeader from "./CalendarHeader";
 import CalendarDay from "./CalendarDay";
@@ -30,6 +31,23 @@ export default function Calendar({
   onNext,
   onSetDayState,
 }: CalendarProps) {
+  // Collect bank holidays for all years visible in the grid
+  const bankHolidays = useMemo(() => {
+    const years = new Set<number>();
+    for (const week of grid) {
+      for (const day of week.days) {
+        years.add(day.date.getFullYear());
+      }
+    }
+    const holidays = new Set<string>();
+    for (const y of years) {
+      for (const h of getBankHolidays(y)) {
+        holidays.add(h);
+      }
+    }
+    return holidays;
+  }, [grid]);
+
   // Build a map of dateKey -> events for efficient lookup
   const eventsByDate = useMemo(() => {
     const map = new Map<string, GoogleCalendarEvent[]>();
@@ -74,6 +92,7 @@ export default function Calendar({
               isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey)}
               isSickLeave={day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
               isPaidLeave={day.isBusinessDay && paidLeaveDays.has(day.dateKey)}
+              isBankHoliday={bankHolidays.has(day.dateKey)}
               events={eventsByDate.get(day.dateKey) || []}
               onSetDayState={onSetDayState}
             />

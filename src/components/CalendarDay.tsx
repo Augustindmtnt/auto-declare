@@ -10,6 +10,7 @@ interface CalendarDayProps {
   isWorked: boolean;
   isSickLeave: boolean;
   isPaidLeave: boolean;
+  isBankHoliday: boolean;
   events: GoogleCalendarEvent[];
   onSetDayState: (dateKey: string, state: DayStateValue) => void;
 }
@@ -21,7 +22,7 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
 
-export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, events, onSetDayState }: CalendarDayProps) {
+export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isBankHoliday, events, onSetDayState }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -57,6 +58,21 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, e
       <div className="min-h-24 p-1 border-t border-gray-100 bg-gray-50/30 flex flex-col">
         <div className="text-center">
           <span className="text-xs text-gray-300">{dayNumber}</span>
+        </div>
+        <EventList events={events} />
+      </div>
+    );
+  }
+
+  // Bank holidays — not toggleable
+  if (isBankHoliday) {
+    return (
+      <div className="min-h-24 p-1 border-t border-gray-100 bg-gray-50/50 flex flex-col">
+        <div className="text-center flex justify-center items-center gap-1">
+          <span className={`text-xs font-medium ${day.isCurrentMonth ? "text-gray-400" : "text-gray-300"}`}>
+            {dayNumber}
+          </span>
+          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
         </div>
         <EventList events={events} />
       </div>
