@@ -15,6 +15,7 @@ interface CalendarDayProps {
   onSetDayState: (dateKey: string, state: DayStateValue) => void;
   onPaintStart: (dateKey: string) => void;
   onPaintEnter: (dateKey: string) => void;
+  hasPaintBrush: boolean;
 }
 
 const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }[] = [
@@ -24,7 +25,7 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
 
-export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isBankHoliday, events, onSetDayState, onPaintStart, onPaintEnter }: CalendarDayProps) {
+export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isBankHoliday, events, onSetDayState, onPaintStart, onPaintEnter, hasPaintBrush }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -122,7 +123,7 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
   return (
     <div ref={ref} className="relative">
       <button
-        className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col cursor-pointer ${bgClass}`}
+        className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col ${hasPaintBrush ? "cursor-crosshair" : "cursor-pointer"} ${bgClass}`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}

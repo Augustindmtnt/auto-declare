@@ -22,6 +22,13 @@ interface CalendarProps {
 
 type DayStateValue = "worked" | "off" | "sick" | "paid_leave";
 
+const PAINT_LABELS: Record<DayStateValue, { label: string; dot: string; bg: string }> = {
+  worked: { label: "Travaillé", dot: "bg-blue-500", bg: "bg-blue-50 border-blue-200" },
+  off: { label: "Absent", dot: "bg-gray-400", bg: "bg-gray-50 border-gray-200" },
+  sick: { label: "Maladie / sans solde", dot: "bg-rose-500", bg: "bg-rose-50 border-rose-200" },
+  paid_leave: { label: "Congés payés", dot: "bg-amber-500", bg: "bg-amber-50 border-amber-200" },
+};
+
 export default function Calendar({
   displayedMonth,
   grid,
@@ -130,6 +137,22 @@ export default function Calendar({
         ))}
       </div>
 
+      {/* Paint brush indicator */}
+      {paintState && (
+        <div className={`flex items-center justify-center gap-2 px-3 py-1.5 border-b text-xs ${PAINT_LABELS[paintState].bg}`}>
+          <span className={`w-2 h-2 rounded-full ${PAINT_LABELS[paintState].dot}`} />
+          <span className="text-gray-600">
+            Glisser pour appliquer : <span className="font-medium text-gray-900">{PAINT_LABELS[paintState].label}</span>
+          </span>
+          <button
+            onClick={() => setPaintState(null)}
+            className="ml-1 text-gray-400 hover:text-gray-600 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* Calendar grid */}
       <div
         className={`grid grid-cols-7 divide-x divide-gray-100${isPainting ? " select-none" : ""}`}
@@ -148,6 +171,7 @@ export default function Calendar({
               onSetDayState={handleSetDayState}
               onPaintStart={handlePaintStart}
               onPaintEnter={handlePaintEnter}
+              hasPaintBrush={paintState !== null}
             />
           ))
         )}
