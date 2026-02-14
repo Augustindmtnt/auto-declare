@@ -116,14 +116,6 @@ export function useCalendarState() {
     [displayedMonth]
   );
 
-  const results: DeclarationResult[] = useMemo(
-    () =>
-      CHILDREN.map((child) =>
-        computeDeclaration(child, displayedMonth, daysOff, sickLeaveDays, paidLeaveDays)
-      ),
-    [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays]
-  );
-
   const paidLeaveCounters: PaidLeaveCounters = useMemo(() => {
     const monthEnd = endOfMonth(displayedMonth);
     const currentPeriod = getReferencePeriod(displayedMonth);
@@ -161,6 +153,17 @@ export function useCalendarState() {
       previousPeriodEnd: previousPeriod.end,
     };
   }, [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays]);
+
+  const results: DeclarationResult[] = useMemo(
+    () =>
+      CHILDREN.map((child) =>
+        computeDeclaration(
+          child, displayedMonth, daysOff, sickLeaveDays, paidLeaveDays,
+          paidLeaveCounters.acquiredPrevious
+        )
+      ),
+    [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays, paidLeaveCounters.acquiredPrevious]
+  );
 
   return {
     displayedMonth,

@@ -33,6 +33,8 @@ export interface DeclarationResult {
   normalHoursInMonth: number;
   hourlyRate: number;
   adjustedSalary: number;
+  congesPayes: number;
+  congesPayesDaysAcquired: number;
 }
 
 export interface GoogleCalendarEvent {

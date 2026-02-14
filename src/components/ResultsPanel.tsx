@@ -59,6 +59,7 @@ function ResultRow({
 
 export default function ResultsPanel({ result }: ResultsPanelProps) {
   const hasSickLeave = result.sickLeaveDeduction > 0;
+  const hasCongesPayes = result.congesPayes > 0;
 
   const sickLeaveTooltip = hasSickLeave
     ? `Taux horaire : salaire mensuel (${formatEuro(result.monthlySalary)}) / heures normales du mois (${formatFrenchNumber(result.normalHoursInMonth)} h) = ${formatFrenchNumber(result.hourlyRate)} €/h\nDéduction : ${formatFrenchNumber(result.hourlyRate)} €/h × ${formatFrenchNumber(result.sickLeaveHours)} h = ${formatEuro(result.sickLeaveDeduction)}`
@@ -95,6 +96,12 @@ export default function ResultsPanel({ result }: ResultsPanelProps) {
           label={`Heures majorées (${formatFrenchNumber(result.majoredHoursCount)} h)`}
           value={formatEuro(result.majoredHoursAmount)}
           copyValue={formatFrenchNumber(result.majoredHoursAmount)}
+        />
+        <ResultRow
+          label={`Congés payés (${result.congesPayesDaysAcquired} j)`}
+          value={formatEuro(result.congesPayes)}
+          copyValue={formatFrenchNumber(result.congesPayes)}
+          tooltip={hasCongesPayes ? `Méthode la plus favorable retenue.\nJours acquis : ${result.congesPayesDaysAcquired} j ouvrables` : undefined}
         />
         <ResultRow
           label="Salaire total"
