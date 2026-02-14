@@ -11,6 +11,7 @@ import {
   MEAL_RATE,
   WEEKS_PER_YEAR,
   HOURS_PER_WEEK,
+  MAJORED_HOURS_THRESHOLD,
 } from "./constants";
 
 /**
@@ -46,10 +47,14 @@ export function computeDeclaration(
   if (isAugust && acquiredPaidLeaveDays > 0) {
     // Méthode 1: 10% of annual net salary
     const method1 = child.monthlySalary * 12 * 0.1;
-    // Méthode 2: maintien de salaire
+    // Méthode 2: maintien de salaire (normal + majored hours separately)
     const netHourlyRate = (child.monthlySalary * 12) / (HOURS_PER_WEEK * WEEKS_PER_YEAR);
     const equivalentWeeks = acquiredPaidLeaveDays / 6;
-    const method2 = equivalentWeeks * HOURS_PER_WEEK * netHourlyRate;
+    const normalHoursPerWeek = Math.min(HOURS_PER_WEEK, MAJORED_HOURS_THRESHOLD);
+    const majoredHoursPerWeek = Math.max(0, HOURS_PER_WEEK - MAJORED_HOURS_THRESHOLD);
+    const method2 =
+      equivalentWeeks * normalHoursPerWeek * netHourlyRate +
+      equivalentWeeks * majoredHoursPerWeek * child.majoredHourRate;
     congesPayes = Math.max(method1, method2);
   }
 
