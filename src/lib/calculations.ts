@@ -9,7 +9,6 @@ import {
 import {
   MAINTENANCE_RATE,
   MEAL_RATE,
-  WEEKS_PER_YEAR,
   HOURS_PER_WEEK,
   MAJORED_HOURS_THRESHOLD,
 } from "./constants";
@@ -48,12 +47,11 @@ export function computeDeclaration(
     // Méthode 1: 10% of annual net salary
     const method1 = child.monthlySalary * 12 * 0.1;
     // Méthode 2: maintien de salaire (normal + majored hours separately)
-    const netHourlyRate = (child.monthlySalary * 12) / (HOURS_PER_WEEK * WEEKS_PER_YEAR);
     const equivalentWeeks = acquiredPaidLeaveDays / 6;
     const normalHoursPerWeek = Math.min(HOURS_PER_WEEK, MAJORED_HOURS_THRESHOLD);
     const majoredHoursPerWeek = Math.max(0, HOURS_PER_WEEK - MAJORED_HOURS_THRESHOLD);
     const method2 =
-      equivalentWeeks * normalHoursPerWeek * netHourlyRate +
+      equivalentWeeks * normalHoursPerWeek * child.netHourlyRate +
       equivalentWeeks * majoredHoursPerWeek * child.majoredHourRate;
     congesPayes = Math.max(method1, method2);
   }

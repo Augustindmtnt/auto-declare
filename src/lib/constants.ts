@@ -4,11 +4,13 @@ export const CHILDREN: ChildConfig[] = [
   {
     name: "Axelle",
     monthlySalary: 658.13,
+    netHourlyRate: 3.9,
     majoredHourRate: 4.29,
   },
   {
     name: "Brune",
     monthlySalary: 691.88,
+    netHourlyRate: 4.1,
     majoredHourRate: 4.51,
   },
 ];
