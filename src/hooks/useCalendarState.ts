@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { addMonths, subMonths, endOfMonth } from "date-fns";
+import { addMonths, subMonths, endOfMonth, startOfWeek, addDays, format } from "date-fns";
 import { buildCalendarGrid } from "@/lib/calendar-utils";
 import { computeDeclaration } from "@/lib/calculations";
 import {
@@ -106,13 +106,34 @@ export function useCalendarState() {
     setDisplayedMonth((m) => addMonths(m, 1));
   }, []);
 
-  const setDayState = useCallback((dateKey: string, state: "worked" | "off" | "sick" | "paid_leave" | "contract_off") => {
+  const setDayState = useCallback((dateKey: string, state: "worked" | "off" | "sick" | "paid_leave") => {
     setDayStates((prev) => {
       const next = new Map(prev);
       if (state === "worked") {
         next.delete(dateKey);
       } else {
         next.set(dateKey, state);
+      }
+      return next;
+    });
+  }, []);
+
+  /** Toggle an entire Mon-Fri week as contract_off. */
+  const toggleWeekContractOff = useCallback((mondayKey: string) => {
+    setDayStates((prev) => {
+      const next = new Map(prev);
+      const monday = new Date(mondayKey);
+      const keys: string[] = [];
+      for (let i = 0; i < 5; i++) {
+        keys.push(format(addDays(monday, i), "yyyy-MM-dd"));
+      }
+      const isAlreadyOff = keys.every((k) => prev.get(k) === "contract_off");
+      for (const k of keys) {
+        if (isAlreadyOff) {
+          next.delete(k);
+        } else {
+          next.set(k, "contract_off");
+        }
       }
       return next;
     });
@@ -193,6 +214,7 @@ export function useCalendarState() {
     goToPreviousMonth,
     goToNextMonth,
     setDayState,
+    toggleWeekContractOff,
     syncFromGoogle,
     clearGoogleEvents,
     paidLeaveCounters,

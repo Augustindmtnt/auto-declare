@@ -24,7 +24,6 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "off", label: "Absent", dot: null },
   { value: "sick", label: "Maladie / sans solde", dot: "bg-rose-500" },
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
-  { value: "contract_off", label: "Absence contrat", dot: "bg-purple-500" },
 ];
 
 export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isContractOff, isBankHoliday, events, onSetDayState, onPaintStart, onPaintEnter, paintCursor }: CalendarDayProps) {

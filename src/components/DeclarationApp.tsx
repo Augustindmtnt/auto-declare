@@ -20,6 +20,7 @@ export default function DeclarationApp() {
     goToPreviousMonth,
     goToNextMonth,
     setDayState,
+    toggleWeekContractOff,
     syncFromGoogle,
     clearGoogleEvents,
     paidLeaveCounters,
@@ -53,6 +54,7 @@ export default function DeclarationApp() {
           onPrevious={goToPreviousMonth}
           onNext={goToNextMonth}
           onSetDayState={setDayState}
+          onToggleWeekContractOff={toggleWeekContractOff}
         />
 
         <PaidLeavePanel counters={paidLeaveCounters} />
