@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState, useEffect, useCallback, useRef } from "react";
+import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { format, startOfWeek } from "date-fns";
 import { CalendarWeek, GoogleCalendarEvent } from "@/lib/types";
 import { DAY_LABELS } from "@/lib/constants";
@@ -156,7 +156,7 @@ export default function Calendar({
       />
 
       {/* Day labels */}
-      <div className="grid grid-cols-[repeat(7,1fr)_2rem] border-b border-gray-200 bg-gray-50">
+      <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
         {DAY_LABELS.map((label) => (
           <div
             key={label}
@@ -165,12 +165,11 @@ export default function Calendar({
             {label}
           </div>
         ))}
-        <div />
       </div>
 
       {/* Calendar grid */}
       <div
-        className={`grid grid-cols-[repeat(7,1fr)_2rem] divide-x divide-gray-100${isPainting ? " select-none" : ""}`}
+        className={isPainting ? "select-none" : ""}
         onMouseLeave={() => setIsPainting(false)}
       >
         {grid.map((week) => {
@@ -180,29 +179,31 @@ export default function Calendar({
             .filter((d) => d.isBusinessDay)
             .every((d) => contractOffDays.has(d.dateKey));
           return (
-            <Fragment key={mondayKey}>
-              {week.days.map((day) => (
-                <CalendarDay
-                  key={day.dateKey}
-                  day={day}
-                  isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey) && !contractOffDays.has(day.dateKey)}
-                  isSickLeave={day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
-                  isPaidLeave={day.isBusinessDay && paidLeaveDays.has(day.dateKey)}
-                  isContractOff={day.isBusinessDay && contractOffDays.has(day.dateKey)}
-                  isBankHoliday={bankHolidays.has(day.dateKey)}
-                  events={eventsByDate.get(day.dateKey) || []}
-                  onSetDayState={handleSetDayState}
-                  onPaintStart={handlePaintStart}
-                  onPaintEnter={handlePaintEnter}
-                  paintCursor={paintCursor}
-                />
-              ))}
+            <div key={mondayKey} className="relative">
+              <div className="grid grid-cols-7 divide-x divide-gray-100">
+                {week.days.map((day) => (
+                  <CalendarDay
+                    key={day.dateKey}
+                    day={day}
+                    isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey) && !contractOffDays.has(day.dateKey)}
+                    isSickLeave={day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
+                    isPaidLeave={day.isBusinessDay && paidLeaveDays.has(day.dateKey)}
+                    isContractOff={day.isBusinessDay && contractOffDays.has(day.dateKey)}
+                    isBankHoliday={bankHolidays.has(day.dateKey)}
+                    events={eventsByDate.get(day.dateKey) || []}
+                    onSetDayState={handleSetDayState}
+                    onPaintStart={handlePaintStart}
+                    onPaintEnter={handlePaintEnter}
+                    paintCursor={paintCursor}
+                  />
+                ))}
+              </div>
               <WeekAction
                 mondayKey={mondayKey}
                 isContractOff={isContractOffWeek}
                 onToggle={onToggleWeekContractOff}
               />
-            </Fragment>
+            </div>
           );
         })}
       </div>
@@ -234,12 +235,12 @@ function WeekAction({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative flex items-center justify-center border-t border-gray-100">
+    <div ref={ref} className="absolute right-1 top-1 z-10">
       <button
-        className={`w-6 h-6 flex items-center justify-center rounded text-xs transition-colors cursor-pointer ${
+        className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] leading-none transition-colors cursor-pointer ${
           isContractOff
-            ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
-            : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            ? "bg-purple-500 text-white hover:bg-purple-600"
+            : "text-gray-400 hover:bg-gray-200 hover:text-gray-600"
         }`}
         onClick={() => setOpen((v) => !v)}
         title="Actions semaine"
