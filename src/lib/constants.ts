@@ -6,12 +6,14 @@ export const CHILDREN: ChildConfig[] = [
     monthlySalary: 658.13,
     netHourlyRate: 3.9,
     majoredHourRate: 4.29,
+    contractStartDate: "2025-01-01", // TODO: set actual date
   },
   {
     name: "Brune",
     monthlySalary: 691.88,
     netHourlyRate: 4.1,
     majoredHourRate: 4.51,
+    contractStartDate: "2025-01-01", // TODO: set actual date
   },
 ];
 

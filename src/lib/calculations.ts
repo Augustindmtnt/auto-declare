@@ -22,10 +22,11 @@ export function computeDeclaration(
   daysOff: Set<string>,
   sickLeaveDays: Set<string> = new Set(),
   paidLeaveDays: Set<string> = new Set(),
+  contractOffDays: Set<string> = new Set(),
   acquiredPaidLeaveDays: number = 0
 ): DeclarationResult {
-  // Paid leave has the same effect as days off on worked days and majored weeks
-  const allDaysOff = new Set([...daysOff, ...paidLeaveDays]);
+  // Paid leave, contract off have the same effect as days off on worked days and majored weeks
+  const allDaysOff = new Set([...daysOff, ...paidLeaveDays, ...contractOffDays]);
 
   const majoredHoursCount = computeMajoredHours(displayedMonth, allDaysOff, sickLeaveDays);
   const majoredHoursAmount = majoredHoursCount * child.majoredHourRate;

@@ -3,6 +3,7 @@ export interface ChildConfig {
   monthlySalary: number;
   netHourlyRate: number;
   majoredHourRate: number;
+  contractStartDate: string; // "YYYY-MM-DD"
 }
 
 export interface CalendarDay {

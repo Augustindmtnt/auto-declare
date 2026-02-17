@@ -14,19 +14,21 @@ interface CalendarProps {
   daysOff: Set<string>;
   sickLeaveDays: Set<string>;
   paidLeaveDays: Set<string>;
+  contractOffDays: Set<string>;
   googleEvents: GoogleCalendarEvent[];
   onPrevious: () => void;
   onNext: () => void;
-  onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "paid_leave") => void;
+  onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "paid_leave" | "contract_off") => void;
 }
 
-type DayStateValue = "worked" | "off" | "sick" | "paid_leave";
+type DayStateValue = "worked" | "off" | "sick" | "paid_leave" | "contract_off";
 
 const PAINT_LABELS: Record<DayStateValue, string> = {
   worked: "Travaillé",
   off: "Absent",
   sick: "Maladie",
   paid_leave: "Congés payés",
+  contract_off: "Absence contrat",
 };
 
 function buildPaintCursor(state: DayStateValue): string {
@@ -42,6 +44,7 @@ export default function Calendar({
   daysOff,
   sickLeaveDays,
   paidLeaveDays,
+  contractOffDays,
   googleEvents,
   onPrevious,
   onNext,
@@ -172,9 +175,10 @@ export default function Calendar({
             <CalendarDay
               key={day.dateKey}
               day={day}
-              isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey)}
+              isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey) && !contractOffDays.has(day.dateKey)}
               isSickLeave={day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
               isPaidLeave={day.isBusinessDay && paidLeaveDays.has(day.dateKey)}
+              isContractOff={day.isBusinessDay && contractOffDays.has(day.dateKey)}
               isBankHoliday={bankHolidays.has(day.dateKey)}
               events={eventsByDate.get(day.dateKey) || []}
               onSetDayState={handleSetDayState}

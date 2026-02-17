@@ -15,7 +15,7 @@ import { CHILDREN } from "@/lib/constants";
 import { CalendarWeek, DeclarationResult, GoogleCalendarEvent } from "@/lib/types";
 import type { PaidLeaveCounters } from "@/components/PaidLeavePanel";
 
-type DayState = "off" | "sick" | "paid_leave";
+type DayState = "off" | "sick" | "paid_leave" | "contract_off";
 
 export function useCalendarState() {
   const [displayedMonth, setDisplayedMonth] = useState(
@@ -36,6 +36,10 @@ export function useCalendarState() {
   );
   const paidLeaveDays = useMemo(
     () => new Set([...dayStates].filter(([, s]) => s === "paid_leave").map(([k]) => k)),
+    [dayStates]
+  );
+  const contractOffDays = useMemo(
+    () => new Set([...dayStates].filter(([, s]) => s === "contract_off").map(([k]) => k)),
     [dayStates]
   );
 
@@ -61,6 +65,12 @@ export function useCalendarState() {
         map.set(key, "paid_leave");
       }
     }
+    const savedContractOff = localStorage.getItem("contractOffDays");
+    if (savedContractOff) {
+      for (const key of JSON.parse(savedContractOff)) {
+        map.set(key, "contract_off");
+      }
+    }
 
     if (map.size > 0) setDayStates(map);
     setIsHydrated(true);
@@ -72,14 +82,17 @@ export function useCalendarState() {
       const off: string[] = [];
       const sick: string[] = [];
       const paid: string[] = [];
+      const contractOff: string[] = [];
       for (const [key, state] of dayStates) {
         if (state === "off") off.push(key);
         else if (state === "sick") sick.push(key);
         else if (state === "paid_leave") paid.push(key);
+        else if (state === "contract_off") contractOff.push(key);
       }
       localStorage.setItem("daysOff", JSON.stringify(off));
       localStorage.setItem("sickLeaveDays", JSON.stringify(sick));
       localStorage.setItem("paidLeaveDays", JSON.stringify(paid));
+      localStorage.setItem("contractOffDays", JSON.stringify(contractOff));
     }
   }, [dayStates, isHydrated]);
 
@@ -91,7 +104,7 @@ export function useCalendarState() {
     setDisplayedMonth((m) => addMonths(m, 1));
   }, []);
 
-  const setDayState = useCallback((dateKey: string, state: "worked" | "off" | "sick" | "paid_leave") => {
+  const setDayState = useCallback((dateKey: string, state: "worked" | "off" | "sick" | "paid_leave" | "contract_off") => {
     setDayStates((prev) => {
       const next = new Map(prev);
       if (state === "worked") {
@@ -123,7 +136,7 @@ export function useCalendarState() {
 
     // Acquired during previous period
     const workedWeeksPrev = computeWorkedWeeks(
-      previousPeriod.start, previousPeriod.end, daysOff, sickLeaveDays, paidLeaveDays
+      previousPeriod.start, previousPeriod.end, daysOff, sickLeaveDays, paidLeaveDays, contractOffDays
     );
     const acquiredPrevious = computeAcquiredPaidLeave(workedWeeksPrev);
 
@@ -138,7 +151,7 @@ export function useCalendarState() {
     // Acquiring: worked weeks in current period up to end of displayed month
     const acquiringEnd = monthEnd < currentPeriod.end ? monthEnd : currentPeriod.end;
     const workedWeeksCurrent = computeWorkedWeeks(
-      currentPeriod.start, acquiringEnd, daysOff, sickLeaveDays, paidLeaveDays
+      currentPeriod.start, acquiringEnd, daysOff, sickLeaveDays, paidLeaveDays, contractOffDays
     );
     const acquiring = computeAcquiredPaidLeave(workedWeeksCurrent);
 
@@ -152,17 +165,17 @@ export function useCalendarState() {
       previousPeriodStart: previousPeriod.start,
       previousPeriodEnd: previousPeriod.end,
     };
-  }, [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays]);
+  }, [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays, contractOffDays]);
 
   const results: DeclarationResult[] = useMemo(
     () =>
       CHILDREN.map((child) =>
         computeDeclaration(
           child, displayedMonth, daysOff, sickLeaveDays, paidLeaveDays,
-          paidLeaveCounters.acquiredPrevious
+          contractOffDays, paidLeaveCounters.acquiredPrevious
         )
       ),
-    [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays, paidLeaveCounters.acquiredPrevious]
+    [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays, contractOffDays, paidLeaveCounters.acquiredPrevious]
   );
 
   return {
@@ -170,6 +183,7 @@ export function useCalendarState() {
     daysOff,
     sickLeaveDays,
     paidLeaveDays,
+    contractOffDays,
     googleEvents,
     grid,
     results,

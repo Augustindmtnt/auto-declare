@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCalendarState } from "@/hooks/useCalendarState";
 import Calendar from "./Calendar";
 import ResultsDashboard from "./ResultsDashboard";
@@ -12,6 +13,7 @@ export default function DeclarationApp() {
     daysOff,
     sickLeaveDays,
     paidLeaveDays,
+    contractOffDays,
     googleEvents,
     grid,
     results,
@@ -27,7 +29,12 @@ export default function DeclarationApp() {
     <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="max-w-5xl mx-auto space-y-6">
         <header className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">autodeclare</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold text-gray-900">autodeclare</h1>
+            <Link href="/contrats" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+              Contrats
+            </Link>
+          </div>
           <GoogleSyncButton
             onSync={syncFromGoogle}
             onClear={clearGoogleEvents}
@@ -41,6 +48,7 @@ export default function DeclarationApp() {
           daysOff={daysOff}
           sickLeaveDays={sickLeaveDays}
           paidLeaveDays={paidLeaveDays}
+          contractOffDays={contractOffDays}
           googleEvents={googleEvents}
           onPrevious={goToPreviousMonth}
           onNext={goToNextMonth}

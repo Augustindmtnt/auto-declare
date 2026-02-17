@@ -52,7 +52,8 @@ export function computeWorkedWeeks(
   periodEnd: Date,
   daysOff: Set<string>,
   sickLeaveDays: Set<string>,
-  paidLeaveDays: Set<string>
+  paidLeaveDays: Set<string>,
+  contractOffDays: Set<string> = new Set()
 ): number {
   // Find the first Monday on or after periodStart
   let monday = startOfWeek(periodStart, { weekStartsOn: 1 });
@@ -74,6 +75,7 @@ export function computeWorkedWeeks(
 
       if (daysOff.has(key)) continue;
       if (sickLeaveDays.has(key)) continue;
+      if (contractOffDays.has(key)) continue;
 
       workedDays++;
     }
