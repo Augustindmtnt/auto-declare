@@ -11,13 +11,15 @@ import {
   computeAcquiredPaidLeave,
   countPaidLeaveTakenInPeriod,
 } from "@/lib/paid-leave";
-import { CHILDREN } from "@/lib/constants";
+import { computeMonthlySalary } from "@/lib/constants";
 import { CalendarWeek, DeclarationResult, GoogleCalendarEvent } from "@/lib/types";
+import { useContracts } from "./useContracts";
 import type { PaidLeaveCounters } from "@/components/PaidLeavePanel";
 
 type DayState = "off" | "sick" | "paid_leave" | "contract_off";
 
 export function useCalendarState() {
+  const { children } = useContracts();
   const [displayedMonth, setDisplayedMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
   );
@@ -169,13 +171,14 @@ export function useCalendarState() {
 
   const results: DeclarationResult[] = useMemo(
     () =>
-      CHILDREN.map((child) =>
-        computeDeclaration(
-          child, displayedMonth, daysOff, sickLeaveDays, paidLeaveDays,
+      children.map((child) => {
+        const monthlySalary = computeMonthlySalary(child.netHourlyRate);
+        return computeDeclaration(
+          child, monthlySalary, displayedMonth, daysOff, sickLeaveDays, paidLeaveDays,
           contractOffDays, paidLeaveCounters.acquiredPrevious
-        )
-      ),
-    [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays, contractOffDays, paidLeaveCounters.acquiredPrevious]
+        );
+      }),
+    [children, displayedMonth, daysOff, sickLeaveDays, paidLeaveDays, contractOffDays, paidLeaveCounters.acquiredPrevious]
   );
 
   return {

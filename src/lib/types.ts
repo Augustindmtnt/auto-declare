@@ -1,6 +1,5 @@
 export interface ChildConfig {
   name: string;
-  monthlySalary: number;
   netHourlyRate: number;
   majoredHourRate: number;
   contractStartDate: string; // "YYYY-MM-DD"

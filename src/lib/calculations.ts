@@ -18,6 +18,7 @@ import {
  */
 export function computeDeclaration(
   child: ChildConfig,
+  monthlySalary: number,
   displayedMonth: Date,
   daysOff: Set<string>,
   sickLeaveDays: Set<string> = new Set(),
@@ -32,10 +33,10 @@ export function computeDeclaration(
   const majoredHoursAmount = majoredHoursCount * child.majoredHourRate;
 
   const normalHoursInMonth = countNormalHoursInMonth(displayedMonth);
-  const hourlyRate = normalHoursInMonth > 0 ? child.monthlySalary / normalHoursInMonth : 0;
+  const hourlyRate = normalHoursInMonth > 0 ? monthlySalary / normalHoursInMonth : 0;
   const sickLeaveHours = countSickLeaveHours(displayedMonth, sickLeaveDays);
   const sickLeaveDeduction = hourlyRate * sickLeaveHours;
-  const adjustedSalary = child.monthlySalary - sickLeaveDeduction;
+  const adjustedSalary = monthlySalary - sickLeaveDeduction;
 
   const workedDays = countWorkedDays(displayedMonth, allDaysOff, sickLeaveDays);
   const maintenanceAllowance = workedDays * MAINTENANCE_RATE;
@@ -46,7 +47,7 @@ export function computeDeclaration(
   let congesPayes = 0;
   if (isAugust && acquiredPaidLeaveDays > 0) {
     // Méthode 1: 10% of annual net salary
-    const method1 = child.monthlySalary * 12 * 0.1;
+    const method1 = monthlySalary * 12 * 0.1;
     // Méthode 2: maintien de salaire (normal + majored hours separately)
     const equivalentWeeks = acquiredPaidLeaveDays / 6;
     const normalHoursPerWeek = Math.min(HOURS_PER_WEEK, MAJORED_HOURS_THRESHOLD);
@@ -61,7 +62,7 @@ export function computeDeclaration(
 
   return {
     childName: child.name,
-    monthlySalary: child.monthlySalary,
+    monthlySalary,
     majoredHoursCount,
     majoredHoursAmount,
     totalSalary,
