@@ -38,21 +38,21 @@ export default function ContratsPage() {
                   <EditableNumberRow
                     label="Taux horaire net"
                     value={child.netHourlyRate}
-                    suffix=" \u20ac/h"
+                    suffix=" €/h"
                     step={0.01}
                     onChange={(v) => updateChild(index, { netHourlyRate: v })}
                   />
                   <EditableNumberRow
                     label="Taux horaire majoré"
                     value={child.majoredHourRate}
-                    suffix=" \u20ac/h"
+                    suffix=" €/h"
                     step={0.01}
                     onChange={(v) => updateChild(index, { majoredHourRate: v })}
                   />
                   <ReadOnlyRow
                     label="Salaire mensuel net"
-                    value={`${monthlySalary.toFixed(2)} \u20ac`}
-                    tooltip={`${child.netHourlyRate} \u20ac/h \u00d7 ${NORMAL_HOURS_PER_WEEK} h \u00d7 ${WEEKS_PER_YEAR} sem / 12`}
+                    value={`${monthlySalary.toFixed(2)} €`}
+                    tooltip={`${child.netHourlyRate} €/h × ${NORMAL_HOURS_PER_WEEK} h × ${WEEKS_PER_YEAR} sem / 12`}
                   />
                   <ReadOnlyRow
                     label="Semaines / an"
