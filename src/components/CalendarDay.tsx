@@ -223,9 +223,9 @@ function EventList({ events }: { events: GoogleCalendarEvent[] }) {
 
   return (
     <div className="mt-1 space-y-0.5 overflow-hidden">
-      {events.slice(0, 3).map((event) => (
+      {events.slice(0, 3).map((event, i) => (
         <div
-          key={event.id}
+          key={`${event.id}-${i}`}
           className="text-[10px] leading-tight px-1 py-0.5 rounded bg-orange-100 text-orange-800 truncate"
         >
           {event.summary}
