@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { label: "Déclaration", href: "/" },
   { label: "Contrats", href: "/contrats" },
+  { label: "Paramètres", href: "/parametres" },
 ];
 
 export default function Navbar() {

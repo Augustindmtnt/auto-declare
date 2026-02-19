@@ -14,8 +14,9 @@ import {
   computePaidLeaveSaturdayDays,
 } from "@/lib/paid-leave";
 import { computeMonthlySalary } from "@/lib/constants";
-import { CalendarWeek, DeclarationResult, GoogleCalendarEvent } from "@/lib/types";
+import { CalendarWeek, DeclarationResult } from "@/lib/types";
 import { useContracts } from "./useContracts";
+import { useGoogleEvents } from "@/contexts/GoogleEventsContext";
 
 type DayState = "off" | "sick" | "paid_leave" | "contract_off";
 
@@ -26,7 +27,7 @@ export function useCalendarState() {
   );
   const [dayStates, setDayStates] = useState<Map<string, DayState>>(() => new Map());
   const [isHydrated, setIsHydrated] = useState(false);
-  const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([]);
+  const { events: googleEvents } = useGoogleEvents();
 
   // Derive daysOff and sickLeaveDays from combined state
   const daysOff = useMemo(
@@ -140,14 +141,6 @@ export function useCalendarState() {
     });
   }, []);
 
-  const syncFromGoogle = useCallback((events: GoogleCalendarEvent[]) => {
-    setGoogleEvents(events);
-  }, []);
-
-  const clearGoogleEvents = useCallback(() => {
-    setGoogleEvents([]);
-  }, []);
-
   const grid: CalendarWeek[] = useMemo(
     () => buildCalendarGrid(displayedMonth),
     [displayedMonth]
@@ -238,8 +231,6 @@ export function useCalendarState() {
     goToNextMonth,
     setDayState,
     toggleWeekContractOff,
-    syncFromGoogle,
-    clearGoogleEvents,
     paidLeaveCounters,
   };
 }

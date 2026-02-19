@@ -3,30 +3,21 @@
 import { useState, useEffect, useRef } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { format, subYears, addYears } from "date-fns";
-import { GoogleCalendarEvent } from "@/lib/types";
+import { useGoogleEvents } from "@/contexts/GoogleEventsContext";
 
 type SyncStatus = "idle" | "loading" | "synced" | "error";
 
-interface GoogleSyncButtonProps {
-  onSync: (events: GoogleCalendarEvent[]) => void;
-  onClear: () => void;
-  isSynced: boolean;
-}
-
-export default function GoogleSyncButton({
-  onSync,
-  onClear,
-  isSynced,
-}: GoogleSyncButtonProps) {
+export default function GoogleSyncButton() {
+  const { events, setEvents, clearEvents } = useGoogleEvents();
   const { data: session, status: sessionStatus } = useSession();
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const hasAutoSynced = useRef(false);
+  const isSynced = events.length > 0;
 
   // Auto-sync on mount when authenticated
   useEffect(() => {
     if (sessionStatus === "authenticated" && session && !hasAutoSynced.current && !isSynced) {
-      // If token refresh failed, force re-login
       if (session.error === "RefreshAccessTokenError") {
         signIn("google");
         return;
@@ -37,32 +28,25 @@ export default function GoogleSyncButton({
   }, [sessionStatus, session, isSynced]);
 
   const handleSyncInternal = async () => {
-
     setSyncStatus("loading");
     setError(null);
 
     try {
       const now = new Date();
-      const timeMin = subYears(now, 1);
-      const timeMax = addYears(now, 1);
-
       const params = new URLSearchParams({
-        timeMin: format(timeMin, "yyyy-MM-dd"),
-        timeMax: format(timeMax, "yyyy-MM-dd"),
+        timeMin: format(subYears(now, 1), "yyyy-MM-dd"),
+        timeMax: format(addYears(now, 1), "yyyy-MM-dd"),
       });
 
       const response = await fetch(`/api/calendar/events?${params}`);
 
       if (!response.ok) {
-        if (response.status === 401) {
-          signIn("google");
-          return;
-        }
+        if (response.status === 401) { signIn("google"); return; }
         throw new Error("Failed to fetch calendar events");
       }
 
       const data = await response.json();
-      onSync(data.events);
+      setEvents(data.events);
       setSyncStatus("synced");
     } catch (err) {
       console.error("Sync error:", err);
@@ -80,7 +64,7 @@ export default function GoogleSyncButton({
   };
 
   const handleClear = () => {
-    onClear();
+    clearEvents();
     setSyncStatus("idle");
     setError(null);
     hasAutoSynced.current = false;
@@ -107,24 +91,9 @@ export default function GoogleSyncButton({
           className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed transition-colors"
         >
           {isLoading ? (
-            <svg
-              className="w-4 h-4 animate-spin"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
+            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
           ) : (
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
