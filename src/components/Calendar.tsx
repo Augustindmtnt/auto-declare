@@ -18,6 +18,7 @@ interface CalendarProps {
   paidLeaveSaturdayDays: Set<string>;
   contractOffDays: Set<string>;
   googleEvents: GoogleCalendarEvent[];
+  paidLeaveAvailable: boolean;
   onPrevious: () => void;
   onNext: () => void;
   onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "paid_leave") => void;
@@ -49,6 +50,7 @@ export default function Calendar({
   paidLeaveSaturdayDays,
   contractOffDays,
   googleEvents,
+  paidLeaveAvailable,
   onPrevious,
   onNext,
   onSetDayState,
@@ -193,6 +195,7 @@ export default function Calendar({
                     isAutoPaidLeave={!day.isBusinessDay && paidLeaveSaturdayDays.has(day.dateKey)}
                     isContractOff={day.isBusinessDay && contractOffDays.has(day.dateKey)}
                     isBankHoliday={bankHolidays.has(day.dateKey)}
+                    paidLeaveAvailable={paidLeaveAvailable}
                     events={eventsByDate.get(day.dateKey) || []}
                     onSetDayState={handleSetDayState}
                     onPaintStart={handlePaintStart}

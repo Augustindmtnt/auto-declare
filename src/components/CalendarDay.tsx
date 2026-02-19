@@ -13,6 +13,7 @@ interface CalendarDayProps {
   isAutoPaidLeave: boolean;
   isContractOff: boolean;
   isBankHoliday: boolean;
+  paidLeaveAvailable: boolean;
   events: GoogleCalendarEvent[];
   onSetDayState: (dateKey: string, state: DayStateValue) => void;
   onPaintStart: (dateKey: string) => void;
@@ -27,7 +28,7 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
 
-export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isAutoPaidLeave, isContractOff, isBankHoliday, events, onSetDayState, onPaintStart, onPaintEnter, paintCursor }: CalendarDayProps) {
+export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isAutoPaidLeave, isContractOff, isBankHoliday, paidLeaveAvailable, events, onSetDayState, onPaintStart, onPaintEnter, paintCursor }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -185,25 +186,32 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
         <div className={`absolute left-1/2 -translate-x-1/2 z-20 bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[10rem] ${
           openAbove ? "bottom-full mb-1" : "top-full mt-1"
         }`}>
-          {STATE_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 hover:bg-gray-50 transition-colors cursor-pointer ${
-                currentState === opt.value ? "font-semibold text-gray-900" : "text-gray-600"
-              }`}
-              onClick={() => {
-                onSetDayState(day.dateKey, opt.value);
-                setOpen(false);
-              }}
-            >
-              {opt.dot ? (
-                <span className={`w-2 h-2 rounded-full ${opt.dot}`} />
-              ) : (
-                <span className="w-2 h-2 rounded-full border border-gray-300" />
-              )}
-              {opt.label}
-            </button>
-          ))}
+          {STATE_OPTIONS.map((opt) => {
+            const isPaidLeaveDisabled = opt.value === "paid_leave" && !isPaidLeave && !paidLeaveAvailable;
+            return (
+              <button
+                key={opt.value}
+                disabled={isPaidLeaveDisabled}
+                className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors ${
+                  isPaidLeaveDisabled
+                    ? "opacity-40 cursor-not-allowed text-gray-400"
+                    : `hover:bg-gray-50 cursor-pointer ${currentState === opt.value ? "font-semibold text-gray-900" : "text-gray-600"}`
+                }`}
+                onClick={() => {
+                  if (isPaidLeaveDisabled) return;
+                  onSetDayState(day.dateKey, opt.value);
+                  setOpen(false);
+                }}
+              >
+                {opt.dot ? (
+                  <span className={`w-2 h-2 rounded-full ${opt.dot}`} />
+                ) : (
+                  <span className="w-2 h-2 rounded-full border border-gray-300" />
+                )}
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>

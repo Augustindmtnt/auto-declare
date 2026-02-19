@@ -9,6 +9,7 @@ import {
   getPreviousReferencePeriod,
   computeWorkedWeeks,
   computeAcquiredPaidLeave,
+  computeAcquiredPaidLeaveRaw,
   countPaidLeaveTakenInPeriod,
   computePaidLeaveSaturdayDays,
 } from "@/lib/paid-leave";
@@ -169,9 +170,17 @@ export function useCalendarState() {
       for (const h of getBankHolidays(year)) bankHolidays.add(h);
     }
 
+    // Raw P accrual up to the end of the displayed month (decimal, no ceiling)
+    const acquiringEnd = monthEnd < currentPeriod.end ? monthEnd : currentPeriod.end;
+    const workedWeeksCurrent = computeWorkedWeeks(
+      currentPeriod.start, acquiringEnd, daysOff, sickLeaveDays, paidLeaveDays, contractOffDays
+    );
+    const acquiringRaw = computeAcquiredPaidLeaveRaw(workedWeeksCurrent);
+
     // Saturdays that automatically count as paid leave (jours ouvrables)
+    // Pass acquiringRaw so the balance includes both P-1 and current-period accrual
     const paidLeaveSaturdayDays = computePaidLeaveSaturdayDays(
-      paidLeaveDays, bankHolidays, acquiredPrevious, currentPeriod.start, currentPeriod.end
+      paidLeaveDays, bankHolidays, acquiredPrevious, currentPeriod.start, currentPeriod.end, acquiringRaw
     );
 
     // Paid leave taken in the current period (manual days + auto-Saturdays)
@@ -179,15 +188,14 @@ export function useCalendarState() {
       currentPeriod.start, currentPeriod.end, paidLeaveDays, paidLeaveSaturdayDays
     );
 
-    // Available = acquired previous - taken in current
+    // P-1 balance: exhausted first
     const available = Math.max(0, acquiredPrevious - takenInCurrent);
 
-    // Acquiring: worked weeks in current period up to end of displayed month
-    const acquiringEnd = monthEnd < currentPeriod.end ? monthEnd : currentPeriod.end;
-    const workedWeeksCurrent = computeWorkedWeeks(
-      currentPeriod.start, acquiringEnd, daysOff, sickLeaveDays, paidLeaveDays, contractOffDays
-    );
-    const acquiring = computeAcquiredPaidLeave(workedWeeksCurrent);
+    // Days drawn in anticipation from the current period (P), if P-1 is exhausted
+    const takenFromP = Math.max(0, takenInCurrent - acquiredPrevious);
+
+    // Net P balance: raw accrual minus what was already taken in anticipation, ceiled for display
+    const acquiring = Math.max(0, Math.ceil(acquiringRaw - takenFromP));
 
     return {
       paidLeaveCounters: {

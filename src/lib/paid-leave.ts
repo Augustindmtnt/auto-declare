@@ -4,7 +4,6 @@ import {
   startOfWeek,
 } from "date-fns";
 
-
 /**
  * Returns the reference period (June 1 – May 31) containing the given date.
  * - June–December → June of same year to May of next year
@@ -89,6 +88,16 @@ export function computeWorkedWeeks(
 }
 
 /**
+ * Compute acquired paid leave days (raw decimal) from worked weeks.
+ * Formula: min(workedWeeks / 4 * 2.5, 30) — no ceiling applied.
+ * Use this for internal balance tracking where decimal precision matters.
+ */
+export function computeAcquiredPaidLeaveRaw(workedWeeks: number): number {
+  if (workedWeeks <= 0) return 0;
+  return Math.min((workedWeeks / 4) * 2.5, 30);
+}
+
+/**
  * Compute acquired paid leave days from worked weeks.
  * Formula: ceil(workedWeeks / 4 * 2.5), capped at 30.
  */
@@ -104,8 +113,11 @@ export function computeAcquiredPaidLeave(workedWeeks: number): number {
  * excluding Sundays and bank holidays). So when a Friday is taken as paid leave,
  * the following Saturday is also consumed from the balance — UNLESS:
  *   - The Saturday is a bank holiday, or
- *   - There is only 1 paid leave day remaining in the balance before Friday
- *     (i.e. the balance would not cover both Friday and Saturday).
+ *   - The balance is zero after consuming Friday (nothing left for Saturday).
+ *
+ * The balance includes both the P-1 acquired days and the raw P accrual so far,
+ * allowing anticipation of the current-period accrual. Using raw decimals here
+ * means 0.625 remaining after Friday still allows Saturday (ceil(0.625) = 1).
  *
  * Days are processed in chronological order within the reference period,
  * tracking the running balance.
@@ -115,7 +127,8 @@ export function computePaidLeaveSaturdayDays(
   bankHolidays: Set<string>,
   acquiredPrevious: number,
   periodStart: Date,
-  periodEnd: Date
+  periodEnd: Date,
+  acquiringRaw: number = 0
 ): Set<string> {
   const startKey = format(periodStart, "yyyy-MM-dd");
   const endKey = format(periodEnd, "yyyy-MM-dd");
@@ -124,7 +137,8 @@ export function computePaidLeaveSaturdayDays(
     .filter((k) => k >= startKey && k <= endKey)
     .sort();
 
-  let remaining = acquiredPrevious;
+  // Combined balance: P-1 (integer) + P raw accrual
+  let remaining = acquiredPrevious + acquiringRaw;
   const saturdays = new Set<string>();
 
   for (const key of periodDays) {
@@ -138,9 +152,9 @@ export function computePaidLeaveSaturdayDays(
     if (dow === 5) { // Friday
       const satDate = addDays(date, 1);
       const satKey = format(satDate, "yyyy-MM-dd");
-      // Saturday counts only if not a bank holiday AND balance still >= 1
-      // (i.e. before Friday the balance was >= 2)
-      if (!bankHolidays.has(satKey) && remaining >= 1) {
+      // Saturday counts if not a bank holiday AND there is still something left
+      // after consuming Friday (even a fraction: 0.625 → ceil = 1 day available)
+      if (!bankHolidays.has(satKey) && remaining > 0) {
         saturdays.add(satKey);
         remaining = Math.max(0, remaining - 1);
       }

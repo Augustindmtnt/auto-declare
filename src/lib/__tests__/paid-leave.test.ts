@@ -4,6 +4,7 @@ import {
   getPreviousReferencePeriod,
   computeWorkedWeeks,
   computeAcquiredPaidLeave,
+  computeAcquiredPaidLeaveRaw,
   countPaidLeaveTakenInPeriod,
   computePaidLeaveSaturdayDays,
 } from "../paid-leave";
@@ -118,6 +119,26 @@ describe("computeWorkedWeeks", () => {
     const end = new Date(2025, 5, 8);    // Sunday
     const weeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
     expect(weeks).toBe(0);
+  });
+});
+
+describe("computeAcquiredPaidLeaveRaw", () => {
+  it("returns raw decimal for 9 weeks (user example)", () => {
+    // 9 / 4 * 2.5 = 5.625
+    expect(computeAcquiredPaidLeaveRaw(9)).toBeCloseTo(5.625);
+  });
+
+  it("returns raw decimal for 10 weeks", () => {
+    // 10 / 4 * 2.5 = 6.25
+    expect(computeAcquiredPaidLeaveRaw(10)).toBeCloseTo(6.25);
+  });
+
+  it("caps at 30 without ceiling", () => {
+    expect(computeAcquiredPaidLeaveRaw(52)).toBe(30);
+  });
+
+  it("returns 0 for 0 weeks", () => {
+    expect(computeAcquiredPaidLeaveRaw(0)).toBe(0);
   });
 });
 
@@ -270,5 +291,52 @@ describe("computePaidLeaveSaturdayDays", () => {
       paidLeaveDays, noBankHolidays, 10, periodStart, periodEnd
     );
     expect(result.size).toBe(0);
+  });
+
+  it("allows Saturday via P anticipation (decimal remaining > 0)", () => {
+    // P-1 = 0, P raw = 5.625 (9 weeks). Take Mon-Fri → 5 consumed, remaining = 0.625 > 0 → Saturday counts
+    // 2025-07-07 Mon … 2025-07-11 Fri
+    const paidLeaveDays = new Set(["2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11"]);
+    const result = computePaidLeaveSaturdayDays(
+      paidLeaveDays, noBankHolidays, 0, periodStart, periodEnd, 5.625
+    );
+    expect(result.has("2025-07-12")).toBe(true); // Saturday counts
+    expect(result.size).toBe(1);
+  });
+
+  it("Saturday does not count when remaining is exactly 0 after Friday (no P balance)", () => {
+    // P-1 = 5, take Mon-Fri (5 days) → remaining = 0 after Friday → Saturday excluded
+    const paidLeaveDays = new Set(["2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11"]);
+    const result = computePaidLeaveSaturdayDays(
+      paidLeaveDays, noBankHolidays, 5, periodStart, periodEnd, 0
+    );
+    expect(result.has("2025-07-12")).toBe(false);
+    expect(result.size).toBe(0);
+  });
+
+  it("anticipation example: 9 worked weeks, Mon-Fri leave, Saturday counts and net balance is 0.25 after week 10", () => {
+    // P-1 = 0, P raw = 5.625 after week 9
+    // After full Mon-Fri + auto-Saturday: takenInPeriod = 6, takenFromP = 6
+    // pBalanceRaw after week 10: 6.25 (10 weeks) - 6 = 0.25 → displayed 1
+    const acquiringRaw9  = computeAcquiredPaidLeaveRaw(9);  // 5.625
+    const acquiringRaw10 = computeAcquiredPaidLeaveRaw(10); // 6.25
+
+    expect(acquiringRaw9).toBeCloseTo(5.625);
+    expect(acquiringRaw10).toBeCloseTo(6.25);
+
+    const paidLeaveDays = new Set(["2025-07-07", "2025-07-08", "2025-07-09", "2025-07-10", "2025-07-11"]);
+    const saturdays9 = computePaidLeaveSaturdayDays(
+      paidLeaveDays, noBankHolidays, 0, periodStart, periodEnd, acquiringRaw9
+    );
+    expect(saturdays9.has("2025-07-12")).toBe(true); // Saturday counted
+
+    const takenInPeriod = 5 + saturdays9.size; // 6
+    const takenFromP = takenInPeriod; // P-1 = 0, all from P
+
+    // At end of week 10:
+    const pBalanceRaw10 = acquiringRaw10 - takenFromP; // 6.25 - 6 = 0.25
+    const pAvailable10  = Math.max(0, Math.ceil(pBalanceRaw10)); // ceil(0.25) = 1
+    expect(pBalanceRaw10).toBeCloseTo(0.25);
+    expect(pAvailable10).toBe(1);
   });
 });

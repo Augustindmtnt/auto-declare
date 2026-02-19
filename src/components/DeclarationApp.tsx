@@ -53,6 +53,7 @@ export default function DeclarationApp() {
           paidLeaveSaturdayDays={paidLeaveSaturdayDays}
           contractOffDays={contractOffDays}
           googleEvents={googleEvents}
+          paidLeaveAvailable={paidLeaveCounters.available + paidLeaveCounters.acquiring > 0}
           onPrevious={goToPreviousMonth}
           onNext={goToNextMonth}
           onSetDayState={setDayState}

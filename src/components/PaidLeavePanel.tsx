@@ -38,7 +38,7 @@ export default function PaidLeavePanel({ counters }: { counters: PaidLeaveCounte
         </div>
         <div className="flex items-center justify-between py-2">
           <div>
-            <span className="text-sm text-gray-700">En acquisition</span>
+            <span className="text-sm text-gray-700">Solde période en cours</span>
             <span className="block text-xs text-gray-400">
               {formatPeriod(counters.currentPeriodStart, counters.currentPeriodEnd)}
             </span>
