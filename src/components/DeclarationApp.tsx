@@ -13,6 +13,7 @@ export default function DeclarationApp() {
     daysOff,
     sickLeaveDays,
     paidLeaveDays,
+    paidLeaveSaturdayDays,
     contractOffDays,
     googleEvents,
     grid,
@@ -49,6 +50,7 @@ export default function DeclarationApp() {
           daysOff={daysOff}
           sickLeaveDays={sickLeaveDays}
           paidLeaveDays={paidLeaveDays}
+          paidLeaveSaturdayDays={paidLeaveSaturdayDays}
           contractOffDays={contractOffDays}
           googleEvents={googleEvents}
           onPrevious={goToPreviousMonth}

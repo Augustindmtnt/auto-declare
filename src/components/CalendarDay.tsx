@@ -10,6 +10,7 @@ interface CalendarDayProps {
   isWorked: boolean;
   isSickLeave: boolean;
   isPaidLeave: boolean;
+  isAutoPaidLeave: boolean;
   isContractOff: boolean;
   isBankHoliday: boolean;
   events: GoogleCalendarEvent[];
@@ -26,7 +27,7 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
 
-export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isContractOff, isBankHoliday, events, onSetDayState, onPaintStart, onPaintEnter, paintCursor }: CalendarDayProps) {
+export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isAutoPaidLeave, isContractOff, isBankHoliday, events, onSetDayState, onPaintStart, onPaintEnter, paintCursor }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -66,6 +67,17 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
 
   // Weekend cells
   if (!day.isBusinessDay) {
+    if (isAutoPaidLeave) {
+      return (
+        <div className={`min-h-24 p-1 border-t border-gray-100 flex flex-col ${day.isCurrentMonth ? "bg-amber-50/60" : "bg-amber-50/25"}`}>
+          <div className="text-center flex justify-center items-center gap-1">
+            <span className={`text-xs ${day.isCurrentMonth ? "text-amber-500" : "text-amber-300"}`}>{dayNumber}</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          </div>
+          <EventList events={events} />
+        </div>
+      );
+    }
     return (
       <div className="min-h-24 p-1 border-t border-gray-100 bg-gray-50/50 flex flex-col">
         <div className="text-center">

@@ -4,6 +4,7 @@ import {
   startOfWeek,
 } from "date-fns";
 
+
 /**
  * Returns the reference period (June 1 – May 31) containing the given date.
  * - June–December → June of same year to May of next year
@@ -97,12 +98,67 @@ export function computeAcquiredPaidLeave(workedWeeks: number): number {
 }
 
 /**
- * Count the number of paid leave days taken within a period.
+ * Compute which Saturdays automatically count as paid leave ("jours ouvrables").
+ *
+ * In French labour law, paid leave is counted in "jours ouvrables" (Mon–Sat,
+ * excluding Sundays and bank holidays). So when a Friday is taken as paid leave,
+ * the following Saturday is also consumed from the balance — UNLESS:
+ *   - The Saturday is a bank holiday, or
+ *   - There is only 1 paid leave day remaining in the balance before Friday
+ *     (i.e. the balance would not cover both Friday and Saturday).
+ *
+ * Days are processed in chronological order within the reference period,
+ * tracking the running balance.
+ */
+export function computePaidLeaveSaturdayDays(
+  paidLeaveDays: Set<string>,
+  bankHolidays: Set<string>,
+  acquiredPrevious: number,
+  periodStart: Date,
+  periodEnd: Date
+): Set<string> {
+  const startKey = format(periodStart, "yyyy-MM-dd");
+  const endKey = format(periodEnd, "yyyy-MM-dd");
+
+  const periodDays = [...paidLeaveDays]
+    .filter((k) => k >= startKey && k <= endKey)
+    .sort();
+
+  let remaining = acquiredPrevious;
+  const saturdays = new Set<string>();
+
+  for (const key of periodDays) {
+    const [y, m, d] = key.split("-").map(Number);
+    const date = new Date(y, m - 1, d);
+    const dow = date.getDay(); // 0=Sun … 5=Fri … 6=Sat
+
+    // Consume this paid leave day from the running balance
+    remaining = Math.max(0, remaining - 1);
+
+    if (dow === 5) { // Friday
+      const satDate = addDays(date, 1);
+      const satKey = format(satDate, "yyyy-MM-dd");
+      // Saturday counts only if not a bank holiday AND balance still >= 1
+      // (i.e. before Friday the balance was >= 2)
+      if (!bankHolidays.has(satKey) && remaining >= 1) {
+        saturdays.add(satKey);
+        remaining = Math.max(0, remaining - 1);
+      }
+    }
+  }
+
+  return saturdays;
+}
+
+/**
+ * Count the number of paid leave days taken within a period,
+ * including automatically-counted Saturdays (jours ouvrables).
  */
 export function countPaidLeaveTakenInPeriod(
   periodStart: Date,
   periodEnd: Date,
-  paidLeaveDays: Set<string>
+  paidLeaveDays: Set<string>,
+  autoSaturdayDays: Set<string> = new Set()
 ): number {
   const startKey = format(periodStart, "yyyy-MM-dd");
   const endKey = format(periodEnd, "yyyy-MM-dd");
@@ -113,5 +169,8 @@ export function countPaidLeaveTakenInPeriod(
       count++;
     }
   }
+  // autoSaturdayDays are already scoped to the period by computePaidLeaveSaturdayDays;
+  // count them all (even the rare Saturday that spills one day past periodEnd).
+  count += autoSaturdayDays.size;
   return count;
 }

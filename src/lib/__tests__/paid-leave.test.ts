@@ -5,6 +5,7 @@ import {
   computeWorkedWeeks,
   computeAcquiredPaidLeave,
   countPaidLeaveTakenInPeriod,
+  computePaidLeaveSaturdayDays,
 } from "../paid-leave";
 
 describe("getReferencePeriod", () => {
@@ -189,5 +190,85 @@ describe("countPaidLeaveTakenInPeriod", () => {
       paidLeaveDays
     );
     expect(count).toBe(2);
+  });
+
+  it("also counts auto-Saturday days", () => {
+    const paidLeaveDays = new Set(["2025-07-04"]); // Friday
+    const autoSaturdays = new Set(["2025-07-05"]);  // Saturday
+    const count = countPaidLeaveTakenInPeriod(
+      new Date(2025, 5, 1),
+      new Date(2026, 4, 31),
+      paidLeaveDays,
+      autoSaturdays
+    );
+    expect(count).toBe(2);
+  });
+});
+
+describe("computePaidLeaveSaturdayDays", () => {
+  const periodStart = new Date(2025, 5, 1);  // June 1, 2025
+  const periodEnd   = new Date(2026, 4, 31); // May 31, 2026
+  const noBankHolidays = new Set<string>();
+
+  it("includes the Saturday after a paid-leave Friday when balance >= 2", () => {
+    // 2025-07-04 is a Friday
+    const paidLeaveDays = new Set(["2025-07-04"]);
+    const result = computePaidLeaveSaturdayDays(
+      paidLeaveDays, noBankHolidays, 5, periodStart, periodEnd
+    );
+    expect(result.has("2025-07-05")).toBe(true);
+    expect(result.size).toBe(1);
+  });
+
+  it("excludes the Saturday when balance is only 1 before Friday", () => {
+    // balance=1 → after consuming Friday remaining=0 → Saturday cannot be added
+    const paidLeaveDays = new Set(["2025-07-04"]);
+    const result = computePaidLeaveSaturdayDays(
+      paidLeaveDays, noBankHolidays, 1, periodStart, periodEnd
+    );
+    expect(result.size).toBe(0);
+  });
+
+  it("excludes the Saturday when it is a bank holiday", () => {
+    // 2026-05-01 is Fête du Travail (bank holiday)
+    // The preceding Friday is 2026-04-30
+    const paidLeaveDays = new Set(["2026-04-30"]); // Friday
+    const bankHolidays  = new Set(["2026-05-01"]); // Saturday is bank holiday
+    const result = computePaidLeaveSaturdayDays(
+      paidLeaveDays, bankHolidays, 10, periodStart, periodEnd
+    );
+    expect(result.has("2026-05-01")).toBe(false);
+    expect(result.size).toBe(0);
+  });
+
+  it("handles multiple Fridays and tracks running balance", () => {
+    // Two Fridays with balance=3: first Fri+Sat consumes 2, leaving 1 for second Fri only
+    const paidLeaveDays = new Set(["2025-07-04", "2025-07-11"]); // two Fridays
+    const result = computePaidLeaveSaturdayDays(
+      paidLeaveDays, noBankHolidays, 3, periodStart, periodEnd
+    );
+    // First Friday: remaining before=3 → consumes Fri(rem=2) + Sat(rem=1) → Saturday counted
+    // Second Friday: remaining before=1 → consumes Fri(rem=0) → Saturday NOT counted (rem<1)
+    expect(result.has("2025-07-05")).toBe(true);
+    expect(result.has("2025-07-12")).toBe(false);
+    expect(result.size).toBe(1);
+  });
+
+  it("does not include Saturday for non-Friday paid leave days", () => {
+    // Monday, Tuesday, Wednesday — no Friday
+    const paidLeaveDays = new Set(["2025-07-07", "2025-07-08", "2025-07-09"]);
+    const result = computePaidLeaveSaturdayDays(
+      paidLeaveDays, noBankHolidays, 10, periodStart, periodEnd
+    );
+    expect(result.size).toBe(0);
+  });
+
+  it("ignores paid leave days outside the period", () => {
+    // Friday outside the period
+    const paidLeaveDays = new Set(["2024-05-30"]); // before June 2025
+    const result = computePaidLeaveSaturdayDays(
+      paidLeaveDays, noBankHolidays, 10, periodStart, periodEnd
+    );
+    expect(result.size).toBe(0);
   });
 });

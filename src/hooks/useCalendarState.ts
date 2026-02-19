@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { addMonths, subMonths, endOfMonth, startOfWeek, addDays, format } from "date-fns";
-import { buildCalendarGrid } from "@/lib/calendar-utils";
+import { buildCalendarGrid, getBankHolidays } from "@/lib/calendar-utils";
 import { computeDeclaration } from "@/lib/calculations";
 import {
   getReferencePeriod,
@@ -10,11 +10,11 @@ import {
   computeWorkedWeeks,
   computeAcquiredPaidLeave,
   countPaidLeaveTakenInPeriod,
+  computePaidLeaveSaturdayDays,
 } from "@/lib/paid-leave";
 import { computeMonthlySalary } from "@/lib/constants";
 import { CalendarWeek, DeclarationResult, GoogleCalendarEvent } from "@/lib/types";
 import { useContracts } from "./useContracts";
-import type { PaidLeaveCounters } from "@/components/PaidLeavePanel";
 
 type DayState = "off" | "sick" | "paid_leave" | "contract_off";
 
@@ -152,7 +152,7 @@ export function useCalendarState() {
     [displayedMonth]
   );
 
-  const paidLeaveCounters: PaidLeaveCounters = useMemo(() => {
+  const { paidLeaveCounters, paidLeaveSaturdayDays } = useMemo(() => {
     const monthEnd = endOfMonth(displayedMonth);
     const currentPeriod = getReferencePeriod(displayedMonth);
     const previousPeriod = getPreviousReferencePeriod(displayedMonth);
@@ -163,9 +163,20 @@ export function useCalendarState() {
     );
     const acquiredPrevious = computeAcquiredPaidLeave(workedWeeksPrev);
 
-    // Paid leave taken in the current period
+    // Bank holidays for the current reference period (spans two calendar years)
+    const bankHolidays = new Set<string>();
+    for (const year of [currentPeriod.start.getFullYear(), currentPeriod.end.getFullYear()]) {
+      for (const h of getBankHolidays(year)) bankHolidays.add(h);
+    }
+
+    // Saturdays that automatically count as paid leave (jours ouvrables)
+    const paidLeaveSaturdayDays = computePaidLeaveSaturdayDays(
+      paidLeaveDays, bankHolidays, acquiredPrevious, currentPeriod.start, currentPeriod.end
+    );
+
+    // Paid leave taken in the current period (manual days + auto-Saturdays)
     const takenInCurrent = countPaidLeaveTakenInPeriod(
-      currentPeriod.start, currentPeriod.end, paidLeaveDays
+      currentPeriod.start, currentPeriod.end, paidLeaveDays, paidLeaveSaturdayDays
     );
 
     // Available = acquired previous - taken in current
@@ -179,14 +190,17 @@ export function useCalendarState() {
     const acquiring = computeAcquiredPaidLeave(workedWeeksCurrent);
 
     return {
-      acquiredPrevious,
-      takenInCurrent,
-      available,
-      acquiring,
-      currentPeriodStart: currentPeriod.start,
-      currentPeriodEnd: currentPeriod.end,
-      previousPeriodStart: previousPeriod.start,
-      previousPeriodEnd: previousPeriod.end,
+      paidLeaveCounters: {
+        acquiredPrevious,
+        takenInCurrent,
+        available,
+        acquiring,
+        currentPeriodStart: currentPeriod.start,
+        currentPeriodEnd: currentPeriod.end,
+        previousPeriodStart: previousPeriod.start,
+        previousPeriodEnd: previousPeriod.end,
+      },
+      paidLeaveSaturdayDays,
     };
   }, [displayedMonth, daysOff, sickLeaveDays, paidLeaveDays, contractOffDays]);
 
@@ -207,6 +221,7 @@ export function useCalendarState() {
     daysOff,
     sickLeaveDays,
     paidLeaveDays,
+    paidLeaveSaturdayDays,
     contractOffDays,
     googleEvents,
     grid,
