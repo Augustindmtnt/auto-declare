@@ -2,17 +2,7 @@
 
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-
-export interface PaidLeaveCounters {
-  acquiredPrevious: number;
-  takenInCurrent: number;
-  available: number;
-  acquiring: number;
-  currentPeriodStart: Date;
-  currentPeriodEnd: Date;
-  previousPeriodStart: Date;
-  previousPeriodEnd: Date;
-}
+import { PaidLeaveCounters } from "@/lib/types";
 
 function formatPeriod(start: Date, end: Date): string {
   const s = format(start, "MMMM yyyy", { locale: fr });
@@ -20,10 +10,10 @@ function formatPeriod(start: Date, end: Date): string {
   return `${s} – ${e}`;
 }
 
-export default function PaidLeavePanel({ counters }: { counters: PaidLeaveCounters }) {
+function ChildPaidLeaveSection({ childName, counters }: { childName: string; counters: PaidLeaveCounters }) {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-      <h3 className="text-base font-semibold text-gray-900 mb-4">Congés payés</h3>
+    <div>
+      <p className="text-sm font-medium text-gray-700 mb-1">Congés payés — {childName}</p>
       <div className="divide-y divide-gray-100">
         <div className="flex items-center justify-between py-2">
           <div>
@@ -47,6 +37,25 @@ export default function PaidLeavePanel({ counters }: { counters: PaidLeaveCounte
             {counters.acquiring} j
           </span>
         </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PaidLeavePanel({
+  childData,
+}: {
+  childData: { childName: string; counters: PaidLeaveCounters }[];
+}) {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+      <h3 className="text-base font-semibold text-gray-900 mb-4">Congés payés</h3>
+      <div className="space-y-4">
+        {childData.map(({ childName, counters }, idx) => (
+          <div key={childName} className={idx > 0 ? "pt-4 border-t border-gray-100" : ""}>
+            <ChildPaidLeaveSection childName={childName} counters={counters} />
+          </div>
+        ))}
       </div>
     </div>
   );

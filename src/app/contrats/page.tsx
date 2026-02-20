@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useContracts } from "@/hooks/useContracts";
 import { computeMonthlySalary, WEEKS_PER_YEAR, HOURS_PER_WEEK, MAJORED_HOURS_THRESHOLD } from "@/lib/constants";
@@ -16,12 +15,7 @@ export default function ContratsPage() {
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="max-w-6xl mx-auto space-y-6">
-        <header className="flex items-center gap-4">
-          <Link href="/" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
-            &larr; Retour
-          </Link>
-          <h1 className="text-xl font-semibold text-gray-900">Contrats</h1>
-        </header>
+        <h1 className="text-xl font-semibold text-gray-900">Contrats</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {children.map((child, index) => {

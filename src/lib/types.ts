@@ -38,6 +38,17 @@ export interface DeclarationResult {
   congesPayesDaysAcquired: number;
 }
 
+export interface PaidLeaveCounters {
+  acquiredPrevious: number;
+  takenInCurrent: number;
+  available: number;
+  acquiring: number;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  previousPeriodStart: Date;
+  previousPeriodEnd: Date;
+}
+
 export interface GoogleCalendarEvent {
   id: string;
   summary: string;

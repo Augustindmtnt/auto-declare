@@ -5,6 +5,13 @@ import { CalendarDay as CalendarDayType, GoogleCalendarEvent } from "@/lib/types
 
 type DayStateValue = "worked" | "off" | "sick" | "paid_leave" | "contract_off";
 
+export interface ChildStateBadge {
+  name: string;
+  initials: string;
+  bgColorClass: string;  // e.g. "bg-indigo-500"
+  state: string;         // "worked" | "off" | "sick" | "paid_leave" | "contract_off"
+}
+
 interface CalendarDayProps {
   day: CalendarDayType;
   isWorked: boolean;
@@ -13,7 +20,9 @@ interface CalendarDayProps {
   isAutoPaidLeave: boolean;
   isContractOff: boolean;
   isBankHoliday: boolean;
+  isMixed: boolean;
   paidLeaveAvailable: boolean;
+  childStateBadges: ChildStateBadge[];
   events: GoogleCalendarEvent[];
   onSetDayState: (dateKey: string, state: DayStateValue) => void;
   onPaintStart: (dateKey: string) => void;
@@ -28,7 +37,19 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
 
-export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, isAutoPaidLeave, isContractOff, isBankHoliday, paidLeaveAvailable, events, onSetDayState, onPaintStart, onPaintEnter, paintCursor }: CalendarDayProps) {
+const STATE_DOT: Record<string, string> = {
+  worked: "bg-blue-400",
+  off: "bg-gray-300",
+  sick: "bg-rose-400",
+  paid_leave: "bg-amber-400",
+  contract_off: "bg-purple-400",
+};
+
+export default function CalendarDay({
+  day, isWorked, isSickLeave, isPaidLeave, isAutoPaidLeave, isContractOff,
+  isBankHoliday, isMixed, paidLeaveAvailable, childStateBadges, events,
+  onSetDayState, onPaintStart, onPaintEnter, paintCursor,
+}: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -118,9 +139,13 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
 
   const currentState: DayStateValue = isSickLeave ? "sick" : isPaidLeave ? "paid_leave" : isContractOff ? "contract_off" : isWorked ? "worked" : "off";
 
-  // Determine background based on state
+  // Background based on state (neutral for mixed)
   let bgClass: string;
-  if (isSickLeave) {
+  if (isMixed) {
+    bgClass = day.isCurrentMonth
+      ? "bg-white hover:bg-gray-50"
+      : "bg-gray-50/30 hover:bg-gray-100/50";
+  } else if (isSickLeave) {
     bgClass = day.isCurrentMonth
       ? "bg-rose-50 hover:bg-rose-100"
       : "bg-rose-50/50 hover:bg-rose-100/50";
@@ -166,19 +191,30 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
           <span className={`text-xs font-medium ${textClass}`}>
             {dayNumber}
           </span>
-          {isSickLeave && (
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-          )}
-          {isPaidLeave && (
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-          )}
-          {isContractOff && (
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-          )}
-          {isWorked && !isSickLeave && !isPaidLeave && !isContractOff && (
+          {!isMixed && isSickLeave && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
+          {!isMixed && isPaidLeave && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+          {!isMixed && isContractOff && <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
+          {!isMixed && isWorked && !isSickLeave && !isPaidLeave && !isContractOff && (
             <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           )}
         </div>
+
+        {/* Per-child badges for mixed days */}
+        {isMixed && childStateBadges.length > 0 && (
+          <div className="flex flex-wrap gap-0.5 mt-1 justify-center">
+            {childStateBadges.map((badge) => (
+              <span
+                key={badge.name}
+                className={`flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-bold text-white ${badge.bgColorClass}`}
+                title={badge.name}
+              >
+                {badge.initials}
+                <span className={`w-1.5 h-1.5 rounded-full ${STATE_DOT[badge.state] ?? "bg-gray-300"}`} />
+              </span>
+            ))}
+          </div>
+        )}
+
         <EventList events={events} />
       </button>
 
@@ -188,6 +224,7 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
         }`}>
           {STATE_OPTIONS.map((opt) => {
             const isPaidLeaveDisabled = opt.value === "paid_leave" && !isPaidLeave && !paidLeaveAvailable;
+            const isSelected = !isMixed && currentState === opt.value;
             return (
               <button
                 key={opt.value}
@@ -195,7 +232,7 @@ export default function CalendarDay({ day, isWorked, isSickLeave, isPaidLeave, i
                 className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 transition-colors ${
                   isPaidLeaveDisabled
                     ? "opacity-40 cursor-not-allowed text-gray-400"
-                    : `hover:bg-gray-50 cursor-pointer ${currentState === opt.value ? "font-semibold text-gray-900" : "text-gray-600"}`
+                    : `hover:bg-gray-50 cursor-pointer ${isSelected ? "font-semibold text-gray-900" : "text-gray-600"}`
                 }`}
                 onClick={() => {
                   if (isPaidLeaveDisabled) return;

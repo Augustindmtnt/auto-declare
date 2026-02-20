@@ -2,12 +2,29 @@
 
 import { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { format, startOfWeek } from "date-fns";
-import { CalendarWeek, GoogleCalendarEvent } from "@/lib/types";
+import { CalendarWeek, GoogleCalendarEvent, ChildConfig } from "@/lib/types";
 import { DAY_LABELS } from "@/lib/constants";
 import { getBankHolidays } from "@/lib/calendar-utils";
 import { getEventsForDate } from "@/lib/google-calendar";
 import CalendarHeader from "./CalendarHeader";
-import CalendarDay from "./CalendarDay";
+import CalendarDay, { ChildStateBadge } from "./CalendarDay";
+import { ChildSets } from "@/hooks/useCalendarState";
+
+// Deterministic per-child colors
+const CHILD_COLORS = [
+  "bg-indigo-500",
+  "bg-violet-500",
+  "bg-teal-500",
+  "bg-orange-500",
+];
+
+const STATE_LABELS: Record<string, string> = {
+  worked: "Travaillé",
+  off: "Absent",
+  sick: "Malade",
+  paid_leave: "CP",
+  contract_off: "Absent contrat",
+};
 
 interface CalendarProps {
   displayedMonth: Date;
@@ -17,8 +34,13 @@ interface CalendarProps {
   paidLeaveDays: Set<string>;
   paidLeaveSaturdayDays: Set<string>;
   contractOffDays: Set<string>;
+  mixedDays: Set<string>;
+  perChildSets: Map<string, ChildSets>;
   googleEvents: GoogleCalendarEvent[];
   paidLeaveAvailable: boolean;
+  calendarMode: string;
+  setCalendarMode: (mode: string) => void;
+  children: ChildConfig[];
   onPrevious: () => void;
   onNext: () => void;
   onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "paid_leave") => void;
@@ -49,8 +71,13 @@ export default function Calendar({
   paidLeaveDays,
   paidLeaveSaturdayDays,
   contractOffDays,
+  mixedDays,
+  perChildSets,
   googleEvents,
   paidLeaveAvailable,
+  calendarMode,
+  setCalendarMode,
+  children,
   onPrevious,
   onNext,
   onSetDayState,
@@ -60,16 +87,11 @@ export default function Calendar({
   const [isPainting, setIsPainting] = useState(false);
   const [shiftHeld, setShiftHeld] = useState(false);
   const isPaintingRef = useRef(false);
-
-  // Keep ref in sync so the document listener always sees the latest value
   isPaintingRef.current = isPainting;
 
-  // Track Shift key, end painting on mouseup, clear brush on Escape
   useEffect(() => {
     function handleMouseUp() {
-      if (isPaintingRef.current) {
-        setIsPainting(false);
-      }
+      if (isPaintingRef.current) setIsPainting(false);
     }
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Shift") setShiftHeld(true);
@@ -87,9 +109,9 @@ export default function Calendar({
     };
   }, []);
 
-  // Wrap onSetDayState to also set the paint brush
   const handleSetDayState = useCallback(
     (dateKey: string, state: DayStateValue) => {
+      if (state === "contract_off") return; // Only settable via week action
       onSetDayState(dateKey, state);
       setPaintState(state);
     },
@@ -98,7 +120,7 @@ export default function Calendar({
 
   const handlePaintStart = useCallback(
     (dateKey: string) => {
-      if (paintState) {
+      if (paintState && paintState !== "contract_off") {
         onSetDayState(dateKey, paintState);
         setIsPainting(true);
       }
@@ -108,7 +130,7 @@ export default function Calendar({
 
   const handlePaintEnter = useCallback(
     (dateKey: string) => {
-      if (isPainting && paintState) {
+      if (isPainting && paintState && paintState !== "contract_off") {
         onSetDayState(dateKey, paintState);
       }
     },
@@ -120,24 +142,18 @@ export default function Calendar({
     [shiftHeld, paintState]
   );
 
-  // Collect bank holidays for all years visible in the grid
   const bankHolidays = useMemo(() => {
     const years = new Set<number>();
     for (const week of grid) {
-      for (const day of week.days) {
-        years.add(day.date.getFullYear());
-      }
+      for (const day of week.days) years.add(day.date.getFullYear());
     }
     const holidays = new Set<string>();
     for (const y of years) {
-      for (const h of getBankHolidays(y)) {
-        holidays.add(h);
-      }
+      for (const h of getBankHolidays(y)) holidays.add(h);
     }
     return holidays;
   }, [grid]);
 
-  // Build a map of dateKey -> events for efficient lookup
   const eventsByDate = useMemo(() => {
     const map = new Map<string, GoogleCalendarEvent[]>();
     for (const event of googleEvents) {
@@ -151,6 +167,31 @@ export default function Calendar({
     return map;
   }, [googleEvents]);
 
+  // Per-day child state badges (only for mixed days)
+  const childBadgesPerDay = useMemo<Map<string, ChildStateBadge[]>>(() => {
+    const result = new Map<string, ChildStateBadge[]>();
+    for (const key of mixedDays) {
+      const badges: ChildStateBadge[] = children.map((child, idx) => {
+        const sets = perChildSets.get(child.name);
+        let state: string;
+        if (sets?.sickLeaveDays.has(key)) state = "sick";
+        else if (sets?.paidLeaveDays.has(key)) state = "paid_leave";
+        else if (sets?.contractOffDays.has(key)) state = "contract_off";
+        else if (sets?.daysOff.has(key)) state = "off";
+        else state = "worked";
+        return {
+          name: child.name,
+          initials: child.name.slice(0, 2),
+          bgColorClass: CHILD_COLORS[idx % CHILD_COLORS.length],
+          state,
+          stateLabel: STATE_LABELS[state] ?? state,
+        };
+      });
+      result.set(key, badges);
+    }
+    return result;
+  }, [mixedDays, children, perChildSets]);
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CalendarHeader
@@ -158,6 +199,35 @@ export default function Calendar({
         onPrevious={onPrevious}
         onNext={onNext}
       />
+
+      {/* Mode selector */}
+      {children.length > 1 && (
+        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-gray-100">
+          <button
+            onClick={() => setCalendarMode("tous")}
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+              calendarMode === "tous"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            Tous
+          </button>
+          {children.map((child, idx) => (
+            <button
+              key={child.name}
+              onClick={() => setCalendarMode(child.name)}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                calendarMode === child.name
+                  ? `${CHILD_COLORS[idx % CHILD_COLORS.length]} text-white`
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {child.name.slice(0, 2)}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Day labels */}
       <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
@@ -185,24 +255,29 @@ export default function Calendar({
           return (
             <div key={mondayKey} className="relative">
               <div className="grid grid-cols-7 divide-x divide-gray-100">
-                {week.days.map((day) => (
-                  <CalendarDay
-                    key={day.dateKey}
-                    day={day}
-                    isWorked={day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey) && !contractOffDays.has(day.dateKey)}
-                    isSickLeave={day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
-                    isPaidLeave={day.isBusinessDay && paidLeaveDays.has(day.dateKey)}
-                    isAutoPaidLeave={!day.isBusinessDay && paidLeaveSaturdayDays.has(day.dateKey)}
-                    isContractOff={day.isBusinessDay && contractOffDays.has(day.dateKey)}
-                    isBankHoliday={bankHolidays.has(day.dateKey)}
-                    paidLeaveAvailable={paidLeaveAvailable}
-                    events={eventsByDate.get(day.dateKey) || []}
-                    onSetDayState={handleSetDayState}
-                    onPaintStart={handlePaintStart}
-                    onPaintEnter={handlePaintEnter}
-                    paintCursor={paintCursor}
-                  />
-                ))}
+                {week.days.map((day) => {
+                  const isMixed = mixedDays.has(day.dateKey);
+                  return (
+                    <CalendarDay
+                      key={day.dateKey}
+                      day={day}
+                      isWorked={!isMixed && day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey) && !contractOffDays.has(day.dateKey)}
+                      isSickLeave={!isMixed && day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
+                      isPaidLeave={!isMixed && day.isBusinessDay && paidLeaveDays.has(day.dateKey)}
+                      isAutoPaidLeave={!day.isBusinessDay && paidLeaveSaturdayDays.has(day.dateKey)}
+                      isContractOff={!isMixed && day.isBusinessDay && contractOffDays.has(day.dateKey)}
+                      isBankHoliday={bankHolidays.has(day.dateKey)}
+                      isMixed={isMixed}
+                      paidLeaveAvailable={paidLeaveAvailable}
+                      childStateBadges={childBadgesPerDay.get(day.dateKey) ?? []}
+                      events={eventsByDate.get(day.dateKey) || []}
+                      onSetDayState={handleSetDayState}
+                      onPaintStart={handlePaintStart}
+                      onPaintEnter={handlePaintEnter}
+                      paintCursor={paintCursor}
+                    />
+                  );
+                })}
               </div>
               <WeekAction
                 mondayKey={mondayKey}
