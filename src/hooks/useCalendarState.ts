@@ -203,13 +203,15 @@ export function useCalendarState() {
       );
       const acquiringRaw = computeAcquiredPaidLeaveRaw(workedWeeksCurrent);
 
+      // Use effectiveCurrentStart so paid leave before contract start doesn't
+      // count against this child's balance (avoids double-counting migrated data)
       const paidLeaveSaturdayDays = computePaidLeaveSaturdayDays(
         sets.paidLeaveDays, bankHolidays, acquiredPrevious,
-        currentPeriod.start, currentPeriod.end, acquiringRaw
+        effectiveCurrentStart, currentPeriod.end, acquiringRaw
       );
 
       const takenInCurrent = countPaidLeaveTakenInPeriod(
-        currentPeriod.start, currentPeriod.end, sets.paidLeaveDays, paidLeaveSaturdayDays
+        effectiveCurrentStart, currentPeriod.end, sets.paidLeaveDays, paidLeaveSaturdayDays
       );
 
       const available = Math.max(0, acquiredPrevious - takenInCurrent);
