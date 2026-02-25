@@ -180,7 +180,10 @@ export function useCalendarState() {
     }
 
     return children.map(child => {
-      const contractStart = new Date(child.contractStartDate);
+      // Parse as local midnight — new Date("YYYY-MM-DD") parses as UTC, giving
+      // 01:00–02:00 local in France, which breaks first-Monday detection.
+      const [cy, cm, cd] = child.contractStartDate.split("-").map(Number);
+      const contractStart = new Date(cy, cm - 1, cd);
       const sets = perChildSets.get(child.name) ?? {
         daysOff: new Set<string>(), sickLeaveDays: new Set<string>(),
         paidLeaveDays: new Set<string>(), contractOffDays: new Set<string>(),

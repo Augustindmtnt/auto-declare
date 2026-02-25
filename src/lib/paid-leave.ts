@@ -2,6 +2,7 @@ import {
   format,
   addDays,
   startOfWeek,
+  startOfDay,
 } from "date-fns";
 
 /**
@@ -55,9 +56,14 @@ export function computeWorkedWeeks(
   paidLeaveDays: Set<string>,
   contractOffDays: Set<string> = new Set()
 ): number {
-  // Find the first Monday on or after periodStart
-  let monday = startOfWeek(periodStart, { weekStartsOn: 1 });
-  if (monday < periodStart) {
+  // Normalize to local midnight so that UTC-parsed ISO dates (which land at
+  // 01:00–02:00 local in France) don't cause startOfWeek to return a value
+  // that is technically "earlier" and incorrectly skip the first Monday.
+  const normalizedStart = startOfDay(periodStart);
+
+  // Find the first Monday on or after normalizedStart
+  let monday = startOfWeek(normalizedStart, { weekStartsOn: 1 });
+  if (monday < normalizedStart) {
     monday = addDays(monday, 7);
   }
 

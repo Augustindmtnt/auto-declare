@@ -120,6 +120,28 @@ describe("computeWorkedWeeks", () => {
     const weeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
     expect(weeks).toBe(0);
   });
+
+  it("counts first week when periodStart is a UTC-parsed ISO date on a Monday (timezone regression)", () => {
+    // new Date("2025-07-07") is UTC midnight = 02:00 local in France (UTC+2).
+    // Without startOfDay normalisation, startOfWeek returns Mon 00:00 which is
+    // *before* the 02:00 periodStart, causing the first week to be skipped.
+    // July 7, 2025 is a Monday; July 31 is the end of the month.
+    const start = new Date("2025-07-07"); // UTC-parsed: 02:00 local in UTC+2
+    const end = new Date(2025, 6, 31);   // July 31 local midnight
+    const weeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
+    // Weeks: July 7, 14, 21, 28 → 4 weeks
+    expect(weeks).toBe(4);
+  });
+
+  it("counts the first week when contract starts on the last Monday of the month (worst-case timezone)", () => {
+    // July 28, 2025 is a Monday. Without the fix, UTC-parse → 02:00 local,
+    // startOfWeek returns July 28 00:00 < 02:00 → skips to Aug 4 → 0 weeks for July.
+    const start = new Date("2025-07-28"); // UTC-parsed
+    const end = new Date(2025, 6, 31);   // July 31
+    const weeks = computeWorkedWeeks(start, end, noAbsences, noAbsences, noAbsences);
+    // Week of July 28–Aug 1 has its Monday (July 28) in the period → 1 week
+    expect(weeks).toBe(1);
+  });
 });
 
 describe("computeAcquiredPaidLeaveRaw", () => {
