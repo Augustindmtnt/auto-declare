@@ -220,11 +220,12 @@ export function useCalendarState() {
       const available = Math.max(0, acquiredPrevious - takenInCurrent);
       const takenFromP = Math.max(0, takenInCurrent - acquiredPrevious);
       const acquiring = Math.max(0, Math.ceil(acquiringRaw - takenFromP));
+      const acquiringTotal = Math.ceil(acquiringRaw);
 
       return {
         childName: child.name,
         paidLeaveCounters: {
-          acquiredPrevious, takenInCurrent, available, acquiring,
+          acquiredPrevious, takenInCurrent, available, acquiring, acquiringTotal,
           currentPeriodStart: currentPeriod.start, currentPeriodEnd: currentPeriod.end,
           previousPeriodStart: previousPeriod.start, previousPeriodEnd: previousPeriod.end,
         } as PaidLeaveCounters,

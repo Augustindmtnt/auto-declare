@@ -34,7 +34,7 @@ function ChildPaidLeaveSection({ childName, counters }: { childName: string; cou
             </span>
           </div>
           <span className="text-sm font-mono text-gray-700">
-            {counters.acquiring} j
+            {counters.acquiring} / {counters.acquiringTotal} j
           </span>
         </div>
       </div>

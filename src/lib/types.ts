@@ -42,7 +42,8 @@ export interface PaidLeaveCounters {
   acquiredPrevious: number;
   takenInCurrent: number;
   available: number;
-  acquiring: number;
+  acquiring: number;       // net available (accrued minus taken in advance)
+  acquiringTotal: number;  // total accrued so far this period (before anticipation)
   currentPeriodStart: Date;
   currentPeriodEnd: Date;
   previousPeriodStart: Date;
