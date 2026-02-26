@@ -211,7 +211,7 @@ export default function Calendar({
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            Tous
+            Tous les enfants
           </button>
           {children.map((child, idx) => (
             <button
