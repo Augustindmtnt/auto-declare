@@ -126,10 +126,10 @@ export function useCalendarState() {
         const childMap = new Map(next.get(child.name) ?? new Map<string, DayState>());
         let effectiveState = state;
 
-        // Auto-downgrade paid_leave → off if child has no balance in "tous" mode
+        // Auto-downgrade paid_leave → unpaid_leave if child has no balance in "tous" mode
         if (state === "paid_leave" && mode === "tous") {
           const available = paidLeaveAvailableRef.current.get(child.name) ?? false;
-          if (!available) effectiveState = "off";
+          if (!available) effectiveState = "unpaid_leave";
         }
 
         if (effectiveState === "worked") {
