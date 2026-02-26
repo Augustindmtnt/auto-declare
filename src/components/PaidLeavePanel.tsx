@@ -10,7 +10,7 @@ function ChildPaidLeaveSection({ childName, counters }: { childName: string; cou
   return (
     <div>
       <p className="text-sm font-medium text-gray-700 mb-1">Congés payés — {childName}</p>
-      <div className="divide-y divide-gray-100">
+      <div>
         <div className="flex items-center justify-between py-2">
           <span className="text-sm text-gray-700">
             {periodLabel(counters.previousPeriodStart, counters.previousPeriodEnd)}
