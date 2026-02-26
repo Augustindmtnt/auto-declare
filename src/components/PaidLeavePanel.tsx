@@ -15,8 +15,8 @@ function ChildPaidLeaveSection({ childName, counters }: { childName: string; cou
           <span className="text-sm text-gray-700">
             {periodLabel(counters.previousPeriodStart, counters.previousPeriodEnd)}
           </span>
-          <span className="text-sm font-mono text-gray-900 font-semibold">
-            {counters.available} / {counters.acquiredPrevious} j
+          <span className="text-sm font-mono text-gray-900">
+            {counters.available} j
           </span>
         </div>
         <div className="flex items-center justify-between py-2">
@@ -24,7 +24,7 @@ function ChildPaidLeaveSection({ childName, counters }: { childName: string; cou
             {periodLabel(counters.currentPeriodStart, counters.currentPeriodEnd)}
           </span>
           <span className="text-sm font-mono text-gray-700">
-            {counters.acquiring} / {counters.acquiringTotal} j
+            {counters.acquiring} j
           </span>
         </div>
       </div>
