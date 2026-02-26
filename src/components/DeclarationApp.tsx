@@ -10,6 +10,7 @@ export default function DeclarationApp() {
     displayedMonth,
     daysOff,
     sickLeaveDays,
+    unpaidLeaveDays,
     paidLeaveDays,
     paidLeaveSaturdayDays,
     contractOffDays,
@@ -42,6 +43,7 @@ export default function DeclarationApp() {
           grid={grid}
           daysOff={daysOff}
           sickLeaveDays={sickLeaveDays}
+          unpaidLeaveDays={unpaidLeaveDays}
           paidLeaveDays={paidLeaveDays}
           paidLeaveSaturdayDays={paidLeaveSaturdayDays}
           contractOffDays={contractOffDays}

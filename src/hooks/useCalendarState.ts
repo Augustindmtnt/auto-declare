@@ -18,11 +18,12 @@ import { CalendarWeek, DeclarationResult, PaidLeaveCounters } from "@/lib/types"
 import { useContracts } from "./useContracts";
 import { useGoogleEvents } from "@/contexts/GoogleEventsContext";
 
-type DayState = "off" | "sick" | "paid_leave" | "contract_off";
+type DayState = "off" | "sick" | "unpaid_leave" | "paid_leave" | "contract_off";
 
 export type ChildSets = {
   daysOff: Set<string>;
   sickLeaveDays: Set<string>;
+  unpaidLeaveDays: Set<string>;
   paidLeaveDays: Set<string>;
   contractOffDays: Set<string>;
 };
@@ -52,7 +53,8 @@ export function useCalendarState() {
       const days = childDayStates.get(child.name) ?? new Map<string, DayState>();
       result.set(child.name, {
         daysOff: new Set([...days].filter(([, s]) => s === "off").map(([k]) => k)),
-        sickLeaveDays: new Set([...days].filter(([, s]) => s === "sick").map(([k]) => k)),
+        sickLeaveDays: new Set([...days].filter(([, s]) => s === "sick" || s === "unpaid_leave").map(([k]) => k)),
+        unpaidLeaveDays: new Set([...days].filter(([, s]) => s === "unpaid_leave").map(([k]) => k)),
         paidLeaveDays: new Set([...days].filter(([, s]) => s === "paid_leave").map(([k]) => k)),
         contractOffDays: new Set([...days].filter(([, s]) => s === "contract_off").map(([k]) => k)),
       });
@@ -112,7 +114,7 @@ export function useCalendarState() {
   const goToPreviousMonth = useCallback(() => setDisplayedMonth((m) => subMonths(m, 1)), []);
   const goToNextMonth = useCallback(() => setDisplayedMonth((m) => addMonths(m, 1)), []);
 
-  const setDayState = useCallback((dateKey: string, state: "worked" | "off" | "sick" | "paid_leave") => {
+  const setDayState = useCallback((dateKey: string, state: "worked" | "off" | "sick" | "unpaid_leave" | "paid_leave") => {
     setChildDayStates((prev) => {
       const next = new Map(prev);
       const mode = calendarModeRef.current;
@@ -185,7 +187,7 @@ export function useCalendarState() {
       const [cy, cm, cd] = child.contractStartDate.split("-").map(Number);
       const contractStart = new Date(cy, cm - 1, cd);
       const sets = perChildSets.get(child.name) ?? {
-        daysOff: new Set<string>(), sickLeaveDays: new Set<string>(),
+        daysOff: new Set<string>(), sickLeaveDays: new Set<string>(), unpaidLeaveDays: new Set<string>(),
         paidLeaveDays: new Set<string>(), contractOffDays: new Set<string>(),
       };
 
@@ -216,6 +218,7 @@ export function useCalendarState() {
       const takenInCurrent = countPaidLeaveTakenInPeriod(
         effectiveCurrentStart, currentPeriod.end, sets.paidLeaveDays, paidLeaveSaturdayDays
       );
+
 
       const available = Math.max(0, acquiredPrevious - takenInCurrent);
       const takenFromP = Math.max(0, takenInCurrent - acquiredPrevious);
@@ -250,7 +253,7 @@ export function useCalendarState() {
   const activeSets = useMemo<ChildSets>(() => {
     if (calendarMode !== "tous") {
       return perChildSets.get(calendarMode) ?? {
-        daysOff: new Set<string>(), sickLeaveDays: new Set<string>(),
+        daysOff: new Set<string>(), sickLeaveDays: new Set<string>(), unpaidLeaveDays: new Set<string>(),
         paidLeaveDays: new Set<string>(), contractOffDays: new Set<string>(),
       };
     }
@@ -263,15 +266,17 @@ export function useCalendarState() {
     }
     const daysOff = new Set<string>();
     const sickLeaveDays = new Set<string>();
+    const unpaidLeaveDays = new Set<string>();
     const paidLeaveDays = new Set<string>();
     const contractOffDays = new Set<string>();
     for (const key of allKeys) {
       if (children.every(c => perChildSets.get(c.name)?.daysOff.has(key))) daysOff.add(key);
       if (children.every(c => perChildSets.get(c.name)?.sickLeaveDays.has(key))) sickLeaveDays.add(key);
+      if (children.every(c => perChildSets.get(c.name)?.unpaidLeaveDays.has(key))) unpaidLeaveDays.add(key);
       if (children.every(c => perChildSets.get(c.name)?.paidLeaveDays.has(key))) paidLeaveDays.add(key);
       if (children.every(c => perChildSets.get(c.name)?.contractOffDays.has(key))) contractOffDays.add(key);
     }
-    return { daysOff, sickLeaveDays, paidLeaveDays, contractOffDays };
+    return { daysOff, sickLeaveDays, unpaidLeaveDays, paidLeaveDays, contractOffDays };
   }, [calendarMode, children, perChildSets]);
 
   // Days where children have different states (only relevant in "tous" mode)
@@ -322,7 +327,7 @@ export function useCalendarState() {
     children.map(child => {
       const monthlySalary = computeMonthlySalary(child.netHourlyRate);
       const sets = perChildSets.get(child.name) ?? {
-        daysOff: new Set<string>(), sickLeaveDays: new Set<string>(),
+        daysOff: new Set<string>(), sickLeaveDays: new Set<string>(), unpaidLeaveDays: new Set<string>(),
         paidLeaveDays: new Set<string>(), contractOffDays: new Set<string>(),
       };
       const acquiredPrevious = perChildPaidLeaveData.find(d => d.childName === child.name)
@@ -339,6 +344,7 @@ export function useCalendarState() {
     displayedMonth,
     daysOff: activeSets.daysOff,
     sickLeaveDays: activeSets.sickLeaveDays,
+    unpaidLeaveDays: activeSets.unpaidLeaveDays,
     paidLeaveDays: activeSets.paidLeaveDays,
     contractOffDays: activeSets.contractOffDays,
     mixedDays,

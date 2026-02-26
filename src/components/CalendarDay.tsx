@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { CalendarDay as CalendarDayType, GoogleCalendarEvent } from "@/lib/types";
 
-type DayStateValue = "worked" | "off" | "sick" | "paid_leave" | "contract_off";
+type DayStateValue = "worked" | "off" | "sick" | "unpaid_leave" | "paid_leave" | "contract_off";
 
 export interface ChildStateBadge {
   name: string;
@@ -16,6 +16,7 @@ interface CalendarDayProps {
   day: CalendarDayType;
   isWorked: boolean;
   isSickLeave: boolean;
+  isUnpaidLeave: boolean;
   isPaidLeave: boolean;
   isAutoPaidLeave: boolean;
   isContractOff: boolean;
@@ -24,7 +25,7 @@ interface CalendarDayProps {
   paidLeaveAvailable: boolean;
   childStateBadges: ChildStateBadge[];
   events: GoogleCalendarEvent[];
-  onSetDayState: (dateKey: string, state: DayStateValue) => void;
+  onSetDayState: (dateKey: string, state: Exclude<DayStateValue, "contract_off">) => void;
   onPaintStart: (dateKey: string) => void;
   onPaintEnter: (dateKey: string) => void;
   paintCursor: string | null;
@@ -33,7 +34,8 @@ interface CalendarDayProps {
 const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }[] = [
   { value: "worked", label: "Travaillé", dot: "bg-blue-500" },
   { value: "off", label: "Absent", dot: null },
-  { value: "sick", label: "Maladie / sans solde", dot: "bg-rose-500" },
+  { value: "sick", label: "Arrêt maladie", dot: "bg-rose-500" },
+  { value: "unpaid_leave", label: "Congés sans solde", dot: "bg-rose-300" },
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
 
@@ -41,12 +43,13 @@ const STATE_DOT: Record<string, string> = {
   worked: "bg-blue-400",
   off: "bg-gray-300",
   sick: "bg-rose-400",
+  unpaid_leave: "bg-rose-300",
   paid_leave: "bg-amber-400",
   contract_off: "bg-purple-400",
 };
 
 export default function CalendarDay({
-  day, isWorked, isSickLeave, isPaidLeave, isAutoPaidLeave, isContractOff,
+  day, isWorked, isSickLeave, isUnpaidLeave, isPaidLeave, isAutoPaidLeave, isContractOff,
   isBankHoliday, isMixed, paidLeaveAvailable, childStateBadges, events,
   onSetDayState, onPaintStart, onPaintEnter, paintCursor,
 }: CalendarDayProps) {
@@ -137,7 +140,7 @@ export default function CalendarDay({
     );
   }
 
-  const currentState: DayStateValue = isSickLeave ? "sick" : isPaidLeave ? "paid_leave" : isContractOff ? "contract_off" : isWorked ? "worked" : "off";
+  const currentState: DayStateValue = isUnpaidLeave ? "unpaid_leave" : isSickLeave ? "sick" : isPaidLeave ? "paid_leave" : isContractOff ? "contract_off" : isWorked ? "worked" : "off";
 
   // Background based on state (neutral for mixed)
   let bgClass: string;
@@ -236,7 +239,7 @@ export default function CalendarDay({
                 }`}
                 onClick={() => {
                   if (isPaidLeaveDisabled) return;
-                  onSetDayState(day.dateKey, opt.value);
+                  onSetDayState(day.dateKey, opt.value as Exclude<DayStateValue, "contract_off">);
                   setOpen(false);
                 }}
               >

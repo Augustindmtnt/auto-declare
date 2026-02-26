@@ -21,7 +21,8 @@ const CHILD_COLORS = [
 const STATE_LABELS: Record<string, string> = {
   worked: "Travaillé",
   off: "Absent",
-  sick: "Malade",
+  sick: "Arrêt maladie",
+  unpaid_leave: "CSS",
   paid_leave: "CP",
   contract_off: "Absent contrat",
 };
@@ -31,6 +32,7 @@ interface CalendarProps {
   grid: CalendarWeek[];
   daysOff: Set<string>;
   sickLeaveDays: Set<string>;
+  unpaidLeaveDays: Set<string>;
   paidLeaveDays: Set<string>;
   paidLeaveSaturdayDays: Set<string>;
   contractOffDays: Set<string>;
@@ -43,16 +45,17 @@ interface CalendarProps {
   children: ChildConfig[];
   onPrevious: () => void;
   onNext: () => void;
-  onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "paid_leave") => void;
+  onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "unpaid_leave" | "paid_leave") => void;
   onToggleWeekContractOff: (mondayKey: string) => void;
 }
 
-type DayStateValue = "worked" | "off" | "sick" | "paid_leave" | "contract_off";
+type DayStateValue = "worked" | "off" | "sick" | "unpaid_leave" | "paid_leave" | "contract_off";
 
 const PAINT_LABELS: Record<Exclude<DayStateValue, "contract_off">, string> = {
   worked: "Travaillé",
   off: "Absent",
-  sick: "Maladie",
+  sick: "Arrêt maladie",
+  unpaid_leave: "Congés sans solde",
   paid_leave: "Congés payés",
 };
 
@@ -68,6 +71,7 @@ export default function Calendar({
   grid,
   daysOff,
   sickLeaveDays,
+  unpaidLeaveDays,
   paidLeaveDays,
   paidLeaveSaturdayDays,
   contractOffDays,
@@ -263,6 +267,7 @@ export default function Calendar({
                       day={day}
                       isWorked={!isMixed && day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey) && !contractOffDays.has(day.dateKey)}
                       isSickLeave={!isMixed && day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
+                      isUnpaidLeave={!isMixed && day.isBusinessDay && unpaidLeaveDays.has(day.dateKey)}
                       isPaidLeave={!isMixed && day.isBusinessDay && paidLeaveDays.has(day.dateKey)}
                       isAutoPaidLeave={!day.isBusinessDay && paidLeaveSaturdayDays.has(day.dateKey)}
                       isContractOff={!isMixed && day.isBusinessDay && contractOffDays.has(day.dateKey)}
