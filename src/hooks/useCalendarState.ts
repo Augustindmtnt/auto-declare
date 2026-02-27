@@ -284,11 +284,14 @@ export function useCalendarState() {
     const paidLeaveDays = new Set<string>();
     const contractOffDays = new Set<string>();
     for (const key of allKeys) {
-      if (children.every(c => perChildSets.get(c.name)?.daysOff.has(key))) daysOff.add(key);
-      if (children.every(c => perChildSets.get(c.name)?.sickLeaveDays.has(key))) sickLeaveDays.add(key);
-      if (children.every(c => perChildSets.get(c.name)?.unpaidLeaveDays.has(key))) unpaidLeaveDays.add(key);
-      if (children.every(c => perChildSets.get(c.name)?.paidLeaveDays.has(key))) paidLeaveDays.add(key);
-      if (children.every(c => perChildSets.get(c.name)?.contractOffDays.has(key))) contractOffDays.add(key);
+      // Only consider children whose contract has started on this day
+      const started = children.filter(c => c.contractStartDate <= key);
+      if (started.length === 0) continue;
+      if (started.every(c => perChildSets.get(c.name)?.daysOff.has(key))) daysOff.add(key);
+      if (started.every(c => perChildSets.get(c.name)?.sickLeaveDays.has(key))) sickLeaveDays.add(key);
+      if (started.every(c => perChildSets.get(c.name)?.unpaidLeaveDays.has(key))) unpaidLeaveDays.add(key);
+      if (started.every(c => perChildSets.get(c.name)?.paidLeaveDays.has(key))) paidLeaveDays.add(key);
+      if (started.every(c => perChildSets.get(c.name)?.contractOffDays.has(key))) contractOffDays.add(key);
     }
     return { daysOff, sickLeaveDays, unpaidLeaveDays, paidLeaveDays, contractOffDays };
   }, [calendarMode, children, perChildSets]);
@@ -305,8 +308,11 @@ export function useCalendarState() {
       for (const k of sets.contractOffDays) allKeys.add(k);
     }
     for (const key of allKeys) {
+      // Only consider children whose contract has started on this day
+      const started = children.filter(c => c.contractStartDate <= key);
+      if (started.length < 2) continue;
       const states = new Set<string>();
-      for (const child of children) {
+      for (const child of started) {
         const sets = perChildSets.get(child.name)!;
         if (sets.sickLeaveDays.has(key)) states.add("sick");
         else if (sets.paidLeaveDays.has(key)) states.add("paid_leave");

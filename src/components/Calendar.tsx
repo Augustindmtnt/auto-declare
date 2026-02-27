@@ -177,22 +177,25 @@ export default function Calendar({
   const childBadgesPerDay = useMemo<Map<string, ChildStateBadge[]>>(() => {
     const result = new Map<string, ChildStateBadge[]>();
     for (const key of mixedDays) {
-      const badges: ChildStateBadge[] = children.map((child, idx) => {
-        const sets = perChildSets.get(child.name);
-        let state: string;
-        if (sets?.sickLeaveDays.has(key)) state = "sick";
-        else if (sets?.paidLeaveDays.has(key)) state = "paid_leave";
-        else if (sets?.contractOffDays.has(key)) state = "contract_off";
-        else if (sets?.daysOff.has(key)) state = "off";
-        else state = "worked";
-        return {
-          name: child.name,
-          initials: child.name.slice(0, 2),
-          bgColorClass: CHILD_COLORS[idx % CHILD_COLORS.length],
-          state,
-          stateLabel: STATE_LABELS[state] ?? state,
-        };
-      });
+      const badges: ChildStateBadge[] = children
+        .map((child, idx) => ({ child, idx }))
+        .filter(({ child }) => child.contractStartDate <= key)
+        .map(({ child, idx }) => {
+          const sets = perChildSets.get(child.name);
+          let state: string;
+          if (sets?.sickLeaveDays.has(key)) state = "sick";
+          else if (sets?.paidLeaveDays.has(key)) state = "paid_leave";
+          else if (sets?.contractOffDays.has(key)) state = "contract_off";
+          else if (sets?.daysOff.has(key)) state = "off";
+          else state = "worked";
+          return {
+            name: child.name,
+            initials: child.name.slice(0, 2),
+            bgColorClass: CHILD_COLORS[idx % CHILD_COLORS.length],
+            state,
+            stateLabel: STATE_LABELS[state] ?? state,
+          };
+        });
       result.set(key, badges);
     }
     return result;
