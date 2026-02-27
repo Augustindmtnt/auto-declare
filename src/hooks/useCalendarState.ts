@@ -51,12 +51,13 @@ export function useCalendarState() {
     const result = new Map<string, ChildSets>();
     for (const child of children) {
       const days = childDayStates.get(child.name) ?? new Map<string, DayState>();
+      const start = child.contractStartDate; // "YYYY-MM-DD" — lexicographic compare works
       result.set(child.name, {
-        daysOff: new Set([...days].filter(([, s]) => s === "off").map(([k]) => k)),
-        sickLeaveDays: new Set([...days].filter(([, s]) => s === "sick" || s === "unpaid_leave").map(([k]) => k)),
-        unpaidLeaveDays: new Set([...days].filter(([, s]) => s === "unpaid_leave").map(([k]) => k)),
-        paidLeaveDays: new Set([...days].filter(([, s]) => s === "paid_leave").map(([k]) => k)),
-        contractOffDays: new Set([...days].filter(([, s]) => s === "contract_off").map(([k]) => k)),
+        daysOff: new Set([...days].filter(([k, s]) => k >= start && s === "off").map(([k]) => k)),
+        sickLeaveDays: new Set([...days].filter(([k, s]) => k >= start && (s === "sick" || s === "unpaid_leave")).map(([k]) => k)),
+        unpaidLeaveDays: new Set([...days].filter(([k, s]) => k >= start && s === "unpaid_leave").map(([k]) => k)),
+        paidLeaveDays: new Set([...days].filter(([k, s]) => k >= start && s === "paid_leave").map(([k]) => k)),
+        contractOffDays: new Set([...days].filter(([k, s]) => k >= start && s === "contract_off").map(([k]) => k)),
       });
     }
     return result;
@@ -169,6 +170,19 @@ export function useCalendarState() {
   }, []);
 
   const grid: CalendarWeek[] = useMemo(() => buildCalendarGrid(displayedMonth), [displayedMonth]);
+
+  // Effective contract start for the current calendar mode (for disabling pre-contract days)
+  const effectiveContractStart = useMemo<Date>(() => {
+    if (children.length === 0) return new Date(0);
+    const parseDate = (s: string) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+    if (calendarMode === "tous") {
+      // Most ancient (earliest) start date
+      const sorted = [...children].sort((a, b) => a.contractStartDate.localeCompare(b.contractStartDate));
+      return parseDate(sorted[0].contractStartDate);
+    }
+    const child = children.find(c => c.name === calendarMode);
+    return child ? parseDate(child.contractStartDate) : new Date(0);
+  }, [calendarMode, children]);
 
   // Per-child paid leave data with contract start date clamping
   const perChildPaidLeaveData = useMemo(() => {
@@ -362,5 +376,6 @@ export function useCalendarState() {
     setCalendarMode,
     perChildPaidLeaveData,
     children,
+    effectiveContractStart,
   };
 }

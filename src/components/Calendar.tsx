@@ -43,6 +43,7 @@ interface CalendarProps {
   calendarMode: string;
   setCalendarMode: (mode: string) => void;
   children: ChildConfig[];
+  contractStartDate: Date;
   onPrevious: () => void;
   onNext: () => void;
   onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "unpaid_leave" | "paid_leave") => void;
@@ -82,6 +83,7 @@ export default function Calendar({
   calendarMode,
   setCalendarMode,
   children,
+  contractStartDate,
   onPrevious,
   onNext,
   onSetDayState,
@@ -266,6 +268,7 @@ export default function Calendar({
                       key={day.dateKey}
                       day={day}
                       isWorked={!isMixed && day.isBusinessDay && !daysOff.has(day.dateKey) && !sickLeaveDays.has(day.dateKey) && !paidLeaveDays.has(day.dateKey) && !contractOffDays.has(day.dateKey)}
+                      isBeforeContractStart={day.isBusinessDay && day.date < contractStartDate}
                       isSickLeave={!isMixed && day.isBusinessDay && sickLeaveDays.has(day.dateKey)}
                       isUnpaidLeave={!isMixed && day.isBusinessDay && unpaidLeaveDays.has(day.dateKey)}
                       isPaidLeave={!isMixed && day.isBusinessDay && paidLeaveDays.has(day.dateKey)}

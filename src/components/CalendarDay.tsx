@@ -15,6 +15,7 @@ export interface ChildStateBadge {
 interface CalendarDayProps {
   day: CalendarDayType;
   isWorked: boolean;
+  isBeforeContractStart: boolean;
   isSickLeave: boolean;
   isUnpaidLeave: boolean;
   isPaidLeave: boolean;
@@ -49,7 +50,7 @@ const STATE_DOT: Record<string, string> = {
 };
 
 export default function CalendarDay({
-  day, isWorked, isSickLeave, isUnpaidLeave, isPaidLeave, isAutoPaidLeave, isContractOff,
+  day, isWorked, isBeforeContractStart, isSickLeave, isUnpaidLeave, isPaidLeave, isAutoPaidLeave, isContractOff,
   isBankHoliday, isMixed, paidLeaveAvailable, childStateBadges, events,
   onSetDayState, onPaintStart, onPaintEnter, paintCursor,
 }: CalendarDayProps) {
@@ -107,6 +108,18 @@ export default function CalendarDay({
       <div className="min-h-24 p-1 border-t border-gray-100 bg-gray-50/50 flex flex-col">
         <div className="text-center">
           <span className="text-xs text-gray-400">{dayNumber}</span>
+        </div>
+        <EventList events={events} />
+      </div>
+    );
+  }
+
+  // Before contract start — not interactive
+  if (isBeforeContractStart) {
+    return (
+      <div className="min-h-24 p-1 border-t border-gray-100 bg-gray-50/30 flex flex-col">
+        <div className="text-center">
+          <span className={`text-xs ${day.isCurrentMonth ? "text-gray-300" : "text-gray-200"}`}>{dayNumber}</span>
         </div>
         <EventList events={events} />
       </div>

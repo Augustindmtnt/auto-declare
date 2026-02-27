@@ -28,6 +28,7 @@ export default function DeclarationApp() {
     setCalendarMode,
     perChildPaidLeaveData,
     children,
+    effectiveContractStart,
   } = useCalendarState();
 
   const paidLeaveChildData = perChildPaidLeaveData.map(({ childName, paidLeaveCounters }) => ({
@@ -54,6 +55,7 @@ export default function DeclarationApp() {
           calendarMode={calendarMode}
           setCalendarMode={setCalendarMode}
           children={children}
+          contractStartDate={effectiveContractStart}
           onPrevious={goToPreviousMonth}
           onNext={goToNextMonth}
           onSetDayState={setDayState}
