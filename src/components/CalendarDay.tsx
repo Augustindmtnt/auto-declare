@@ -246,9 +246,9 @@ export default function CalendarDay({
 
         {/* Per-child name pills for mixed days */}
         {isMixed && childStateBadges.length > 0 && (
-          <div className="relative z-10 flex flex-col w-full flex-1 justify-around mt-0.5">
+          <div className="relative z-10 flex flex-col w-full flex-1 mt-0.5">
             {childStateBadges.map((badge) => (
-              <div key={badge.name} className="flex justify-center">
+              <div key={badge.name} className="flex-1 flex items-center px-1.5">
                 <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium text-white ${STATE_PILL_CLASS[badge.state] ?? 'bg-gray-400'}`}>
                   {badge.name}
                 </span>
