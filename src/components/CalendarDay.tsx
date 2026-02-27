@@ -50,12 +50,12 @@ const STATE_BG_COLOR: Record<string, string> = {
 };
 
 const STATE_PILL_CLASS: Record<string, string> = {
-  worked:       'bg-blue-400',
-  off:          'bg-gray-400',
-  sick:         'bg-rose-500',
-  unpaid_leave: 'bg-rose-300',
-  paid_leave:   'bg-amber-400',
-  contract_off: 'bg-purple-400',
+  worked:       'bg-blue-200 text-blue-800',
+  off:          'bg-gray-200 text-gray-700',
+  sick:         'bg-rose-200 text-rose-800',
+  unpaid_leave: 'bg-rose-100 text-rose-700',
+  paid_leave:   'bg-amber-200 text-amber-800',
+  contract_off: 'bg-purple-200 text-purple-800',
 };
 
 const STATE_DOT: Record<string, string> = {
@@ -254,7 +254,7 @@ export default function CalendarDay({
               height: `${(1 / childStateBadges.length) * 100}%`,
             }}
           >
-            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium text-white ${STATE_PILL_CLASS[badge.state] ?? 'bg-gray-400'}`}>
+            <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${STATE_PILL_CLASS[badge.state] ?? 'bg-gray-200 text-gray-700'}`}>
               {badge.name}
             </span>
           </div>
