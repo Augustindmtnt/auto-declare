@@ -117,8 +117,7 @@ export default function Calendar({
   }, []);
 
   const handleSetDayState = useCallback(
-    (dateKey: string, state: DayStateValue) => {
-      if (state === "contract_off") return; // Only settable via week action
+    (dateKey: string, state: Exclude<DayStateValue, "contract_off">) => {
       onSetDayState(dateKey, state);
       setPaintState(state);
     },
@@ -297,6 +296,7 @@ export default function Calendar({
                       events={showEventsOnly ? (eventsByDate.get(day.dateKey) || []) : []}
                       eventsOnly={showEventsOnly}
                       onSetDayState={handleSetDayState}
+                      onToggleWeekContractOff={() => onToggleWeekContractOff(mondayKey)}
                       onPaintStart={handlePaintStart}
                       onPaintEnter={handlePaintEnter}
                       paintCursor={paintCursor}
@@ -304,11 +304,6 @@ export default function Calendar({
                   );
                 })}
               </div>
-              <WeekAction
-                mondayKey={mondayKey}
-                isContractOff={isContractOffWeek}
-                onToggle={onToggleWeekContractOff}
-              />
             </div>
           );
         })}

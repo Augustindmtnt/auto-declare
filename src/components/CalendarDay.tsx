@@ -28,17 +28,19 @@ interface CalendarDayProps {
   events: GoogleCalendarEvent[];
   eventsOnly: boolean;
   onSetDayState: (dateKey: string, state: Exclude<DayStateValue, "contract_off">) => void;
+  onToggleWeekContractOff: () => void;
   onPaintStart: (dateKey: string) => void;
   onPaintEnter: (dateKey: string) => void;
   paintCursor: string | null;
 }
 
-const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }[] = [
+const STATE_OPTIONS: { value: DayStateValue; label: string; subtitle?: string; dot: string | null }[] = [
   { value: "worked", label: "Travaillé", dot: "bg-blue-500" },
   { value: "off", label: "Absence employeur", dot: "bg-orange-500" },
   { value: "sick", label: "Arrêt maladie", dot: "bg-rose-500" },
   { value: "unpaid_leave", label: "Congés sans solde", dot: "bg-rose-300" },
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
+  { value: "contract_off", label: "Absence contrat", subtitle: "semaine entière", dot: "bg-purple-500" },
 ];
 
 const STATE_BG_COLOR: Record<string, string> = {
@@ -71,7 +73,7 @@ const STATE_DOT: Record<string, string> = {
 export default function CalendarDay({
   day, isWorked, isBeforeContractStart, isSickLeave, isUnpaidLeave, isPaidLeave, isAutoPaidLeave, isContractOff,
   isBankHoliday, isMixed, paidLeaveAvailable, childStateBadges, events,
-  eventsOnly, onSetDayState, onPaintStart, onPaintEnter, paintCursor,
+  eventsOnly, onSetDayState, onToggleWeekContractOff, onPaintStart, onPaintEnter, paintCursor,
 }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
@@ -296,16 +298,25 @@ export default function CalendarDay({
                 }`}
                 onClick={() => {
                   if (isPaidLeaveDisabled) return;
-                  onSetDayState(day.dateKey, opt.value as Exclude<DayStateValue, "contract_off">);
+                  if (opt.value === "contract_off") {
+                    onToggleWeekContractOff();
+                  } else {
+                    onSetDayState(day.dateKey, opt.value as Exclude<DayStateValue, "contract_off">);
+                  }
                   setOpen(false);
                 }}
               >
                 {opt.dot ? (
-                  <span className={`w-2 h-2 rounded-full ${opt.dot}`} />
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${opt.dot}`} />
                 ) : (
-                  <span className="w-2 h-2 rounded-full border border-gray-300" />
+                  <span className="w-2 h-2 rounded-full shrink-0 border border-gray-300" />
                 )}
-                {opt.label}
+                <span className="flex flex-col">
+                  {opt.label}
+                  {opt.subtitle && (
+                    <span className="text-[10px] text-gray-400 font-normal">{opt.subtitle}</span>
+                  )}
+                </span>
               </button>
             );
           })}
