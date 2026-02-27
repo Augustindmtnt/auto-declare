@@ -49,6 +49,15 @@ const STATE_BG_COLOR: Record<string, string> = {
   contract_off: '#faf5ff', // purple-50
 };
 
+const STATE_PILL_CLASS: Record<string, string> = {
+  worked:       'bg-blue-400',
+  off:          'bg-gray-400',
+  sick:         'bg-rose-500',
+  unpaid_leave: 'bg-rose-300',
+  paid_leave:   'bg-amber-400',
+  contract_off: 'bg-purple-400',
+};
+
 const STATE_DOT: Record<string, string> = {
   worked: "bg-blue-400",
   off: "bg-gray-300",
@@ -164,17 +173,6 @@ export default function CalendarDay({
 
   const currentState: DayStateValue = isUnpaidLeave ? "unpaid_leave" : isSickLeave ? "sick" : isPaidLeave ? "paid_leave" : isContractOff ? "contract_off" : isWorked ? "worked" : "off";
 
-  // Split gradient background for mixed days
-  let mixedBgStyle: React.CSSProperties | undefined;
-  if (isMixed && childStateBadges.length > 0) {
-    const n = childStateBadges.length;
-    const stops = childStateBadges.flatMap((b, i) => {
-      const color = STATE_BG_COLOR[b.state] ?? '#ffffff';
-      return [`${color} ${(i / n * 100).toFixed(1)}%`, `${color} ${((i + 1) / n * 100).toFixed(1)}%`];
-    });
-    mixedBgStyle = { background: `linear-gradient(to right, ${stops.join(', ')})` };
-  }
-
   // Background based on state
   let bgClass: string;
   if (isMixed) {
@@ -206,8 +204,8 @@ export default function CalendarDay({
   return (
     <div ref={ref} className="relative">
       <button
-        className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col ${paintCursor ? "" : "cursor-pointer"} ${bgClass}`}
-        style={{ ...(mixedBgStyle ?? {}), ...(paintCursor ? { cursor: paintCursor } : {}) }}
+        className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col relative overflow-hidden ${paintCursor ? "" : "cursor-pointer"} ${bgClass}`}
+        style={paintCursor ? { cursor: paintCursor } : undefined}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
@@ -221,7 +219,20 @@ export default function CalendarDay({
           setOpen((v) => !v);
         }}
       >
-        <div className="text-center w-full flex justify-center items-center gap-1">
+        {/* Per-child background strips for mixed days */}
+        {isMixed && childStateBadges.map((badge, i) => (
+          <div
+            key={badge.name}
+            className="absolute inset-y-0"
+            style={{
+              left: `${(i / childStateBadges.length) * 100}%`,
+              width: `${(1 / childStateBadges.length) * 100}%`,
+              backgroundColor: STATE_BG_COLOR[badge.state] ?? '#ffffff',
+            }}
+          />
+        ))}
+
+        <div className="relative z-10 text-center w-full flex justify-center items-center gap-1">
           <span className={`text-xs font-medium ${textClass}`}>
             {dayNumber}
           </span>
@@ -233,8 +244,22 @@ export default function CalendarDay({
           )}
         </div>
 
+        {/* Per-child name pills for mixed days */}
+        {isMixed && childStateBadges.length > 0 && (
+          <div className="relative z-10 flex w-full flex-1 items-center mt-0.5">
+            {childStateBadges.map((badge) => (
+              <div key={badge.name} className="flex-1 flex justify-center">
+                <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium text-white ${STATE_PILL_CLASS[badge.state] ?? 'bg-gray-400'}`}>
+                  {badge.name}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
-        <EventList events={events} />
+        <div className={isMixed ? "relative z-10" : ""}>
+          <EventList events={events} />
+        </div>
       </button>
 
       {open && (
