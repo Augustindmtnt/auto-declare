@@ -5,22 +5,34 @@ import { fr } from "date-fns/locale";
 
 interface CalendarHeaderProps {
   displayedMonth: Date;
+  onToday: () => void;
   onPrevious: () => void;
   onNext: () => void;
 }
 
 export default function CalendarHeader({
   displayedMonth,
+  onToday,
   onPrevious,
   onNext,
 }: CalendarHeaderProps) {
   const label = format(displayedMonth, "MMMM yyyy", { locale: fr });
   const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+  const now = new Date();
+  const isCurrentMonth = displayedMonth.getFullYear() === now.getFullYear() && displayedMonth.getMonth() === now.getMonth();
 
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
       <h2 className="text-lg font-semibold text-gray-900">{capitalizedLabel}</h2>
       <div className="flex items-center gap-1">
+        {!isCurrentMonth && (
+          <button
+            onClick={onToday}
+            className="px-2.5 py-1 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer mr-1"
+          >
+            Aujourd'hui
+          </button>
+        )}
         <button
           onClick={onPrevious}
           className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors text-gray-600 cursor-pointer"

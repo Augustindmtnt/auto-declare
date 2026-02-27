@@ -21,6 +21,7 @@ export default function DeclarationApp() {
     results,
     goToPreviousMonth,
     goToNextMonth,
+    goToCurrentMonth,
     setDayState,
     toggleWeekContractOff,
     paidLeaveAvailable,
@@ -58,6 +59,7 @@ export default function DeclarationApp() {
           contractStartDate={effectiveContractStart}
           onPrevious={goToPreviousMonth}
           onNext={goToNextMonth}
+          onToday={goToCurrentMonth}
           onSetDayState={setDayState}
           onToggleWeekContractOff={toggleWeekContractOff}
         />

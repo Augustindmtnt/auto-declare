@@ -114,6 +114,7 @@ export function useCalendarState() {
 
   const goToPreviousMonth = useCallback(() => setDisplayedMonth((m) => subMonths(m, 1)), []);
   const goToNextMonth = useCallback(() => setDisplayedMonth((m) => addMonths(m, 1)), []);
+  const goToCurrentMonth = useCallback(() => setDisplayedMonth(new Date(new Date().getFullYear(), new Date().getMonth(), 1)), []);
 
   const setDayState = useCallback((dateKey: string, state: "worked" | "off" | "sick" | "unpaid_leave" | "paid_leave") => {
     setChildDayStates((prev) => {
@@ -376,6 +377,7 @@ export function useCalendarState() {
     results,
     goToPreviousMonth,
     goToNextMonth,
+    goToCurrentMonth,
     setDayState,
     toggleWeekContractOff,
     calendarMode,

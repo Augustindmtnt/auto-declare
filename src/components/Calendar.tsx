@@ -44,6 +44,7 @@ interface CalendarProps {
   setCalendarMode: (mode: string) => void;
   children: ChildConfig[];
   contractStartDate: Date;
+  onToday: () => void;
   onPrevious: () => void;
   onNext: () => void;
   onSetDayState: (dateKey: string, state: "worked" | "off" | "sick" | "unpaid_leave" | "paid_leave") => void;
@@ -84,6 +85,7 @@ export default function Calendar({
   setCalendarMode,
   children,
   contractStartDate,
+  onToday,
   onPrevious,
   onNext,
   onSetDayState,
@@ -205,6 +207,7 @@ export default function Calendar({
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       <CalendarHeader
         displayedMonth={displayedMonth}
+        onToday={onToday}
         onPrevious={onPrevious}
         onNext={onNext}
       />
