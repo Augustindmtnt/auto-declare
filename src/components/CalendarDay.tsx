@@ -215,17 +215,16 @@ export default function CalendarDay({
           )}
         </div>
 
-        {/* Per-child badges for mixed days */}
+        {/* Per-child rows for mixed days */}
         {isMixed && childStateBadges.length > 0 && (
-          <div className="flex flex-wrap gap-0.5 mt-1 justify-center">
+          <div className="flex flex-col gap-0.5 mt-1 w-full">
             {childStateBadges.map((badge) => (
               <span
                 key={badge.name}
-                className={`flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-bold text-white ${badge.bgColorClass}`}
-                title={badge.name}
+                className={`flex items-center justify-between gap-1 px-1 py-0.5 rounded text-[9px] font-medium text-white ${badge.bgColorClass}`}
               >
-                {badge.initials}
-                <span className={`w-1.5 h-1.5 rounded-full ${STATE_DOT[badge.state] ?? "bg-gray-300"}`} />
+                {badge.name}
+                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATE_DOT[badge.state] ?? "bg-gray-300"}`} />
               </span>
             ))}
           </div>
