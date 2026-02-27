@@ -26,6 +26,7 @@ interface CalendarDayProps {
   paidLeaveAvailable: boolean;
   childStateBadges: ChildStateBadge[];
   events: GoogleCalendarEvent[];
+  eventsOnly: boolean;
   onSetDayState: (dateKey: string, state: Exclude<DayStateValue, "contract_off">) => void;
   onPaintStart: (dateKey: string) => void;
   onPaintEnter: (dateKey: string) => void;
@@ -70,7 +71,7 @@ const STATE_DOT: Record<string, string> = {
 export default function CalendarDay({
   day, isWorked, isBeforeContractStart, isSickLeave, isUnpaidLeave, isPaidLeave, isAutoPaidLeave, isContractOff,
   isBankHoliday, isMixed, paidLeaveAvailable, childStateBadges, events,
-  onSetDayState, onPaintStart, onPaintEnter, paintCursor,
+  eventsOnly, onSetDayState, onPaintStart, onPaintEnter, paintCursor,
 }: CalendarDayProps) {
   const [open, setOpen] = useState(false);
   const [openAbove, setOpenAbove] = useState(false);
@@ -165,6 +166,18 @@ export default function CalendarDay({
             {dayNumber}
           </span>
           <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+        </div>
+        <EventList events={events} />
+      </div>
+    );
+  }
+
+  // Events-only view — neutral background, no state, no interaction
+  if (eventsOnly) {
+    return (
+      <div className={`min-h-24 p-1 border-t border-gray-100 flex flex-col ${day.isCurrentMonth ? "bg-white" : "bg-gray-50/30"}`}>
+        <div className="text-center">
+          <span className={`text-xs font-medium ${day.isCurrentMonth ? "text-gray-900" : "text-gray-400"}`}>{dayNumber}</span>
         </div>
         <EventList events={events} />
       </div>

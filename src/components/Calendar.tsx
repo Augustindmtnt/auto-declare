@@ -92,6 +92,7 @@ export default function Calendar({
   const [paintState, setPaintState] = useState<DayStateValue | null>(null);
   const [isPainting, setIsPainting] = useState(false);
   const [shiftHeld, setShiftHeld] = useState(false);
+  const [showEventsOnly, setShowEventsOnly] = useState(false);
   const isPaintingRef = useRef(false);
   isPaintingRef.current = isPainting;
 
@@ -209,34 +210,46 @@ export default function Calendar({
         onNext={onNext}
       />
 
-      {/* Mode selector */}
-      {children.length > 1 && (
-        <div className="flex items-center gap-1.5 px-4 py-2 border-b border-gray-100">
-          <button
-            onClick={() => setCalendarMode("tous")}
-            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-              calendarMode === "tous"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Tous les enfants
-          </button>
-          {children.map((child, idx) => (
+      {/* Mode selector + events toggle */}
+      <div className="flex items-center gap-1.5 px-4 py-2 border-b border-gray-100">
+        {children.length > 1 && (
+          <>
             <button
-              key={child.name}
-              onClick={() => setCalendarMode(child.name)}
+              onClick={() => setCalendarMode("tous")}
               className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
-                calendarMode === child.name
-                  ? `${CHILD_COLORS[idx % CHILD_COLORS.length]} text-white`
+                calendarMode === "tous"
+                  ? "bg-blue-500 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              {child.name}
+              Tous les enfants
             </button>
-          ))}
-        </div>
-      )}
+            {children.map((child, idx) => (
+              <button
+                key={child.name}
+                onClick={() => setCalendarMode(child.name)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                  calendarMode === child.name
+                    ? `${CHILD_COLORS[idx % CHILD_COLORS.length]} text-white`
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {child.name}
+              </button>
+            ))}
+          </>
+        )}
+        <button
+          onClick={() => setShowEventsOnly((v) => !v)}
+          className={`ml-auto px-2.5 py-1 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+            showEventsOnly
+              ? "bg-blue-500 text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+          }`}
+        >
+          Évènements
+        </button>
+      </div>
 
       {/* Day labels */}
       <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
@@ -282,6 +295,7 @@ export default function Calendar({
                       paidLeaveAvailable={paidLeaveAvailable}
                       childStateBadges={childBadgesPerDay.get(day.dateKey) ?? []}
                       events={eventsByDate.get(day.dateKey) || []}
+                      eventsOnly={showEventsOnly}
                       onSetDayState={handleSetDayState}
                       onPaintStart={handlePaintStart}
                       onPaintEnter={handlePaintEnter}
