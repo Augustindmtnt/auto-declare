@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { CalendarDay as CalendarDayType, GoogleCalendarEvent } from "@/lib/types";
 
 type DayStateValue = "worked" | "off" | "sick" | "unpaid_leave" | "paid_leave" | "contract_off";
@@ -39,6 +39,15 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
   { value: "unpaid_leave", label: "Congés sans solde", dot: "bg-rose-300" },
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
 ];
+
+const STATE_BG_COLOR: Record<string, string> = {
+  worked:       '#eff6ff', // blue-50
+  off:          '#f9fafb', // gray-50
+  sick:         '#fff1f2', // rose-50
+  unpaid_leave: '#fff1f2', // rose-50
+  paid_leave:   '#fffbeb', // amber-50
+  contract_off: '#faf5ff', // purple-50
+};
 
 const STATE_DOT: Record<string, string> = {
   worked: "bg-blue-400",
@@ -155,12 +164,21 @@ export default function CalendarDay({
 
   const currentState: DayStateValue = isUnpaidLeave ? "unpaid_leave" : isSickLeave ? "sick" : isPaidLeave ? "paid_leave" : isContractOff ? "contract_off" : isWorked ? "worked" : "off";
 
-  // Background based on state (neutral for mixed)
+  // Split gradient background for mixed days
+  let mixedBgStyle: React.CSSProperties | undefined;
+  if (isMixed && childStateBadges.length > 0) {
+    const n = childStateBadges.length;
+    const stops = childStateBadges.flatMap((b, i) => {
+      const color = STATE_BG_COLOR[b.state] ?? '#ffffff';
+      return [`${color} ${(i / n * 100).toFixed(1)}%`, `${color} ${((i + 1) / n * 100).toFixed(1)}%`];
+    });
+    mixedBgStyle = { background: `linear-gradient(to right, ${stops.join(', ')})` };
+  }
+
+  // Background based on state
   let bgClass: string;
   if (isMixed) {
-    bgClass = day.isCurrentMonth
-      ? "bg-white hover:bg-gray-50"
-      : "bg-gray-50/30 hover:bg-gray-100/50";
+    bgClass = "";
   } else if (isSickLeave) {
     bgClass = day.isCurrentMonth
       ? "bg-rose-50 hover:bg-rose-100"
@@ -189,7 +207,7 @@ export default function CalendarDay({
     <div ref={ref} className="relative">
       <button
         className={`min-h-24 p-1 border-t border-gray-100 text-left w-full transition-colors flex flex-col ${paintCursor ? "" : "cursor-pointer"} ${bgClass}`}
-        style={paintCursor ? { cursor: paintCursor } : undefined}
+        style={{ ...(mixedBgStyle ?? {}), ...(paintCursor ? { cursor: paintCursor } : {}) }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseEnter={handleMouseEnter}
@@ -215,20 +233,6 @@ export default function CalendarDay({
           )}
         </div>
 
-        {/* Per-child rows for mixed days */}
-        {isMixed && childStateBadges.length > 0 && (
-          <div className="flex flex-col gap-0.5 mt-1 w-full">
-            {childStateBadges.map((badge) => (
-              <span
-                key={badge.name}
-                className={`flex items-center justify-between gap-1 px-1 py-0.5 rounded text-[9px] font-medium text-white ${badge.bgColorClass}`}
-              >
-                {badge.name}
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATE_DOT[badge.state] ?? "bg-gray-300"}`} />
-              </span>
-            ))}
-          </div>
-        )}
 
         <EventList events={events} />
       </button>
