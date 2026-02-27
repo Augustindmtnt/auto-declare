@@ -294,7 +294,7 @@ export default function Calendar({
                       isMixed={isMixed}
                       paidLeaveAvailable={paidLeaveAvailable}
                       childStateBadges={childBadgesPerDay.get(day.dateKey) ?? []}
-                      events={eventsByDate.get(day.dateKey) || []}
+                      events={showEventsOnly ? (eventsByDate.get(day.dateKey) || []) : []}
                       eventsOnly={showEventsOnly}
                       onSetDayState={handleSetDayState}
                       onPaintStart={handlePaintStart}
