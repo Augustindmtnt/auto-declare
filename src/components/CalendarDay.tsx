@@ -34,7 +34,7 @@ interface CalendarDayProps {
 
 const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }[] = [
   { value: "worked", label: "Travaillé", dot: "bg-blue-500" },
-  { value: "off", label: "Absence employeur", dot: null },
+  { value: "off", label: "Absence employeur", dot: "bg-orange-500" },
   { value: "sick", label: "Arrêt maladie", dot: "bg-rose-500" },
   { value: "unpaid_leave", label: "Congés sans solde", dot: "bg-rose-300" },
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },
@@ -42,7 +42,7 @@ const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }
 
 const STATE_BG_COLOR: Record<string, string> = {
   worked:       '#eff6ff', // blue-50
-  off:          '#f9fafb', // gray-50
+  off:          '#fff7ed', // orange-50
   sick:         '#fff1f2', // rose-50
   unpaid_leave: '#fff1f2', // rose-50
   paid_leave:   '#fffbeb', // amber-50
@@ -51,7 +51,7 @@ const STATE_BG_COLOR: Record<string, string> = {
 
 const STATE_PILL_CLASS: Record<string, string> = {
   worked:       'bg-blue-200 text-blue-800',
-  off:          'bg-gray-200 text-gray-700',
+  off:          'bg-orange-200 text-orange-800',
   sick:         'bg-rose-200 text-rose-800',
   unpaid_leave: 'bg-rose-100 text-rose-700',
   paid_leave:   'bg-amber-200 text-amber-800',
@@ -60,7 +60,7 @@ const STATE_PILL_CLASS: Record<string, string> = {
 
 const STATE_DOT: Record<string, string> = {
   worked: "bg-blue-400",
-  off: "bg-gray-300",
+  off: "bg-orange-400",
   sick: "bg-rose-400",
   unpaid_leave: "bg-rose-300",
   paid_leave: "bg-amber-400",
@@ -195,8 +195,8 @@ export default function CalendarDay({
       : "bg-blue-50/50 hover:bg-blue-100/50";
   } else {
     bgClass = day.isCurrentMonth
-      ? "bg-white hover:bg-gray-50"
-      : "bg-gray-50/30 hover:bg-gray-100/50";
+      ? "bg-orange-50 hover:bg-orange-100"
+      : "bg-orange-50/50 hover:bg-orange-100/50";
   }
 
   const textClass = day.isCurrentMonth ? "text-gray-900" : "text-gray-400";
