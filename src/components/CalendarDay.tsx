@@ -34,7 +34,7 @@ interface CalendarDayProps {
 
 const STATE_OPTIONS: { value: DayStateValue; label: string; dot: string | null }[] = [
   { value: "worked", label: "Travaillé", dot: "bg-blue-500" },
-  { value: "off", label: "Absent", dot: null },
+  { value: "off", label: "Absence employeur", dot: null },
   { value: "sick", label: "Arrêt maladie", dot: "bg-rose-500" },
   { value: "unpaid_leave", label: "Congés sans solde", dot: "bg-rose-300" },
   { value: "paid_leave", label: "Congés payés", dot: "bg-amber-500" },

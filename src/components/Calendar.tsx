@@ -20,11 +20,11 @@ const CHILD_COLORS = [
 
 const STATE_LABELS: Record<string, string> = {
   worked: "Travaillé",
-  off: "Absent",
+  off: "Absence employeur",
   sick: "Arrêt maladie",
   unpaid_leave: "CSS",
   paid_leave: "CP",
-  contract_off: "Absent contrat",
+  contract_off: "Absence employeur contrat",
 };
 
 interface CalendarProps {
@@ -54,7 +54,7 @@ type DayStateValue = "worked" | "off" | "sick" | "unpaid_leave" | "paid_leave" |
 
 const PAINT_LABELS: Record<Exclude<DayStateValue, "contract_off">, string> = {
   worked: "Travaillé",
-  off: "Absent",
+  off: "Absence employeur",
   sick: "Arrêt maladie",
   unpaid_leave: "Congés sans solde",
   paid_leave: "Congés payés",
